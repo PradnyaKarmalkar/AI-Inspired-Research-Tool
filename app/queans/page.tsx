@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft, Upload } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
 
 export default function QuestionAnsweringPage() {
   const router = useRouter();
@@ -9,13 +9,49 @@ export default function QuestionAnsweringPage() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileUpload = (e) => {
     setFile(e.target.files[0]);
+    setUrl(''); // Clear URL input if file is uploaded
   };
 
-  const handleAskQuestion = () => {
-    setAnswer(`Answer for: ${question}`); // Replace with API call
+  const handleUrlChange = (e) => {
+    setUrl(e.target.value);
+    setFile(null); // Clear file input if URL is entered
+  };
+
+  const handleAskQuestion = async () => {
+    if (!question) {
+      alert('❌ Please enter a question.');
+      return;
+    }
+
+    if ((file && url) || (!file && !url)) {
+      alert('❌ Please provide either a URL or a PDF, but not both.');
+      return;
+    }
+
+    setLoading(true); // Start loading
+
+    const formData = new FormData();
+    formData.append('question', question);
+    file ? formData.append('pdf', file) : formData.append('url', url);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/questions/ask', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      setAnswer(data.answer || 'No answer received.');
+    } catch (error) {
+      console.error('Error sending request:', error);
+      setAnswer('❌ Failed to fetch answer. Please try again.');
+    } finally {
+      setLoading(false); // Stop loading
+    }
   };
 
   return (
@@ -32,7 +68,9 @@ export default function QuestionAnsweringPage() {
         <div className="mt-auto bg-green-800 p-3 rounded text-center">
           <p className="text-sm">Mudra</p>
           <p className="text-xs">22167/10000000 Mudra used</p>
-          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">Upgrade</button>
+          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">
+            Upgrade
+          </button>
         </div>
       </aside>
 
@@ -41,40 +79,63 @@ export default function QuestionAnsweringPage() {
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-5">
           <input type="text" placeholder="Explore" className="w-96 px-3 py-2 border rounded-md" />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">Join Aurota for $1/month</button>
+          <button className="bg-green-700 text-white px-4 py-2 rounded">
+            Join Aurota for $1/month
+          </button>
         </div>
 
         {/* Back Button */}
-        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/')}>
+        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/home')}>
           <ArrowLeft size={20} className="mr-2" /> Back
         </button>
 
         {/* Question Answering Section */}
         <div className="bg-white p-6 rounded-lg shadow-md bg-green-50">
           <h3 className="font-bold mb-4 text-green-600">🧠 Question Answering</h3>
-          <p className="text-sm text-green-600">Enter a URL or upload a PDF, then ask a question.</p>
+          <p className="text-sm text-green-600">
+            Enter a URL or upload a PDF, then ask a question.
+          </p>
 
           {/* Input Section */}
           <div className="mt-4 bg-green-50">
+            {/* URL Input */}
             <input
               className="w-full border p-2 rounded-md mb-2 bg-green-50"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={handleUrlChange}
               placeholder="Enter URL here..."
+              disabled={file !== null} // Disable if PDF is uploaded
             />
-            <input type="file" onChange={handleFileUpload} className="w-full border p-2 rounded-md mb-2" />
+
+            {/* File Upload */}
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              className="w-full border p-2 rounded-md mb-2"
+              disabled={url !== ''} // Disable if URL is entered
+            />
+
+            {/* Question Input */}
             <input
               className="w-full border p-2 rounded-md bg-green-50"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask your question here..."
             />
-            <button onClick={handleAskQuestion} className="mt-4 w-full bg-green-700 text-white py-2 rounded">Submit</button>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleAskQuestion}
+              className="mt-4 w-full bg-green-700 text-white py-2 rounded"
+              disabled={loading || (!url && !file)}
+            >
+              {loading ? '⏳ Fetching Answer...' : 'Submit'}
+            </button>
           </div>
 
           {/* Answer Section */}
           <div className="border p-3 min-h-[100px] rounded-md bg-green-50 mt-4">
-            {answer || 'Your answer will appear here.'}
+            {loading ? '⏳ Generating answer...' : answer || 'Your answer will appear here.'}
           </div>
         </div>
       </main>
