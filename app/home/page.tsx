@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Home, History, CreditCard, Settings } from "lucide-react";
+import { Home, History, CreditCard, Settings, LogOut } from "lucide-react";
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,11 +14,11 @@ export default function HomePage() {
       router.push("/report");
     } else if (title === "Recommendation") {
       router.push("/recommendation");
-    } else if (title === "Question Answering"){
-        router.push("/queans")}
+    } else if (title === "Question Answering") {
+      router.push("/queans");
+    }
   };
 
-  // Data for templates
   const templates = [
     { title: "Question Answering", description: "Generate blog titles based on your topic" },
     { title: "Summarization", description: "AI-generated summaries of research papers" },
@@ -26,7 +26,6 @@ export default function HomePage() {
     { title: "Recommendation", description: "Get recommended research papers based on topic" },
   ];
 
-  // Filter & sort based on search query
   const filteredTemplates = templates
     .filter((template) =>
       template.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -34,43 +33,54 @@ export default function HomePage() {
     .sort((a, b) => (a.title.toLowerCase() === searchQuery.toLowerCase() ? -1 : 1));
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#0f0f1b] text-white font-sans">
       {/* Sidebar */}
-      <aside className="w-72 bg-green-800 text-white p-5 flex flex-col">
-        <h1 className="text-3xl font-bold">Research Buddy</h1>
-        <nav className="mt-5 space-y-3">
+      <aside className="w-72 bg-[#1e1e2f] p-6 flex flex-col shadow-md">
+        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <nav className="flex-grow space-y-4">
           <NavItem icon={<Home size={20} />} text="Home" />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Setting" />
         </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            router.push('/login');
+          }}
+          className="mt-auto bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-xl flex items-center justify-center hover:opacity-90 transition duration-200"
+        >
+          <LogOut size={18} className="mr-2" />
+          Logout
+        </button>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 bg-green-100 p-6">
+      <main className="flex-1 p-8 overflow-y-auto">
         {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-5">
+        <div className="flex justify-between items-center mb-6">
           <input
             type="text"
             placeholder="Explore"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-96 px-3 py-2 border rounded-md"
+            className="bg-[#1e1e2f] text-white px-4 py-2 rounded-lg border border-[#2c2c3a] w-96 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">
-            Join Aurota for $1/month
+          <button
+            onClick={() => router.push('/billing')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
+            Join Us for $1/month
           </button>
         </div>
 
         {/* Hero Section */}
-        <div className="bg-gray-800 text-white p-8 rounded-lg text-center">
-          <h2 className="text-2xl font-bold">🚀 Explore all templates 🚀</h2>
-          <p className="text-sm mt-1">💡 सुझनादायक: भवतु 💡</p>
-          <p className="mt-2">Generate everything creatively!</p>
+        <div className="bg-[#1e1e2f] p-8 rounded-xl text-center shadow-md mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">🚀 Explore all templates 🚀</h2>
+          <p className="text-gray-400">Generate everything creatively!</p>
         </div>
 
         {/* Cards Section */}
-        <div className="grid grid-cols-3 gap-4 mt-6 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template, index) => (
             <Card key={index} {...template} onClick={handleCardClick} />
           ))}
@@ -81,11 +91,14 @@ export default function HomePage() {
 }
 
 // Sidebar Navigation Item
-function NavItem({ icon, text }: { icon: React.ReactNode; text: string }) {
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <div className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      onClick={onClick}
+    >
       {icon}
-      <span>{text}</span>
+      <span className="text-white font-medium">{text}</span>
     </div>
   );
 }
@@ -102,11 +115,11 @@ function Card({
 }) {
   return (
     <div
-      className="bg-white p-4 rounded-lg shadow hover:shadow-lg cursor-pointer"
+      className="bg-[#1e1e2f] text-white p-6 rounded-xl shadow-md hover:shadow-xl cursor-pointer transition-all"
       onClick={() => onClick(title)}
     >
-      <h3 className="font-bold">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-gray-400 text-sm">{description}</p>
     </div>
   );
 }

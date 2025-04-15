@@ -13,51 +13,66 @@ export default function ReportGeneratorPage() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#0f0f1b] text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-green-800 text-white p-5 flex flex-col">
-        <h1 className="text-3xl font-bold">Research Buddy</h1>
-        <nav className="mt-5 space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" />
+      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
+        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
+        <nav className="space-y-3">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" />
-          <NavItem icon={<Settings size={20} />} text="Setting" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")}/>
+          <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
-        <div className="mt-auto bg-green-800 p-3 rounded text-center">
-          <p className="text-sm">Mudra</p>
-          <p className="text-xs">22167/10000000 Mudra used</p>
-          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">Upgrade</button>
-        </div>
       </aside>
+
       {/* Main Content */}
-      <main className="flex-1 bg-green-100 p-6">
+      <main className="flex-1 p-6 overflow-y-auto">
         {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-5">
-          <input type="text" placeholder="Explore" className="w-96 px-3 py-2 border rounded-md" />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">Join Aurota for $1/month</button>
+        <div className="flex justify-between items-center mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Explore"
+            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+          />
+          <button
+            onClick={() => router.push('/billing')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
+            Join Us for $1/month
+          </button>
         </div>
+
         {/* Back Button */}
-        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/home')}>
+        <button
+          className="flex items-center text-purple-400 mb-4 hover:underline"
+          onClick={() => router.push('/home')}
+        >
           <ArrowLeft size={20} className="mr-2" /> Back
         </button>
+
         {/* Report Generator Section */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div className="bg-white p-6 rounded-lg shadow bg-green-50">
-            <h3 className="font-bold mb-2 text-green-600">📄 Report Generator</h3>
-            <p className="text-sm text-green-600">Enter URL to generate a report</p>
+          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+            <h3 className="text-lg font-semibold text-purple-400 mb-2">📄 Report Generator</h3>
+            <p className="text-sm text-gray-400 mb-3">Enter a URL to generate a report.</p>
             <input
-              className="w-full border p-2 mt-3 rounded-md bg-green-50 text-green-600"
+              className="w-full p-3 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md placeholder-gray-400 mb-4"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Enter URL here..."
             />
-            <button onClick={handleGenerateReport} className="mt-4 w-full bg-green-700 text-white py-2 rounded">Generate Report</button>
+            <button
+              onClick={handleGenerateReport}
+              className="w-full py-3 rounded-md font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition"
+            >
+              Generate Report
+            </button>
           </div>
+
           {/* Result Section */}
-          <div className="bg-white p-6 rounded-lg shadow bg-green-50">
-            <h3 className="font-bold mb-2 text-green-600">📑 Report</h3>
-            <div className="border p-3 min-h-[100px] rounded-md bg-green-50">
+          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+            <h3 className="text-lg font-semibold text-purple-300 mb-4">📑 Report</h3>
+            <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 whitespace-pre-wrap">
               {report || 'Your generated report will appear here.'}
             </div>
           </div>
@@ -68,11 +83,14 @@ export default function ReportGeneratorPage() {
 }
 
 // Sidebar Navigation Item
-function NavItem({ icon, text }) {
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <div className="flex items-center space-x-2 p-2 hover:bg-green-600 rounded cursor-pointer">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      onClick={onClick}
+    >
       {icon}
-      <span>{text}</span>
+      <span className="text-white font-medium">{text}</span>
     </div>
   );
 }

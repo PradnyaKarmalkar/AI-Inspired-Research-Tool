@@ -2,87 +2,130 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';  // Add this import
 
 export default function RecommendationPage() {
   const router = useRouter();
   const [topic, setTopic] = useState('');
   const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(false);           // Add this
+  const [markdownResults, setMarkdownResults] = useState(''); // Add this
 
   const handleSearch = async () => {
-    // Mock API call - replace with actual API call to fetch recommendations
-    setRecommendations([
-      { title: 'AI in Healthcare', summary: 'Exploring the impact of AI on modern healthcare.', link: '#' },
-      { title: 'Quantum Computing Advances', summary: 'Latest breakthroughs in quantum computing.', link: '#' },
-      { title: 'Neural Networks Explained', summary: 'A deep dive into neural network architectures.', link: '#' }
-    ]);
+    if (!topic.trim()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/recommend-papers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ topic }),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setMarkdownResults(data.markdown);
+        setRecommendations(data.raw_results || []);
+      } else {
+        console.error('Error:', data.message);
+      }
+    } catch (error) {
+      console.error('Failed to fetch recommendations:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-green-800 text-white p-5 flex flex-col">
-        <h1 className="text-3xl font-bold">Reseach Buddy</h1>
-        <nav className="mt-5 space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" />
+    <div className="flex h-screen bg-[#0f0f1b] text-white">
+      {/* Sidebar - Keep this unchanged */}
+      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
+        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
+        <nav className="space-y-3">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')}  />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" />
-          <NavItem icon={<Settings size={20} />} text="Setting" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
+          <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
-        <div className="mt-auto bg-green-800 p-3 rounded text-center">
-          <p className="text-sm">Mudra</p>
-          <p className="text-xs">22167/10000000 Mudra used</p>
-          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">Upgrade</button>
-        </div>
       </aside>
+
       {/* Main Content */}
-      <main className="flex-1 bg-green-100 p-6">
-        {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-5">
-          <input type="text" placeholder="Explore" className="w-96 px-3 py-2 border rounded-md" />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">Join Aurota for $1/month</button>
+      <main className="flex-1 p-6 overflow-y-auto">
+        {/* Top Bar - Keep this unchanged */}
+        <div className="flex justify-between items-center mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Explore"
+            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+          />
+          <button
+            onClick={() => router.push('/billing')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
+            Join Us for $1/month
+          </button>
         </div>
-        {/* Back Button */}
-        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/home')}>
+
+        {/* Back Button - Keep this unchanged */}
+        <button onClick={() => router.push('/home')} className="flex items-center text-purple-400 mb-4 hover:underline">
           <ArrowLeft size={20} className="mr-2" /> Back
         </button>
+
         {/* Recommendation Section */}
-        <div className="bg-white p-6 rounded-lg shadow bg-green-50">
-          <h3 className="font-bold mb-2 text-green-700">🔍 Research Paper Recommendations</h3>
-          <p className="text-sm text-green-600">Enter a topic to get relevant research papers</p>
+        <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+          <h3 className="text-xl font-semibold text-purple-400 mb-2">🔍 Research Paper Recommendations</h3>
+          <p className="text-sm text-gray-400 mb-3">
+            Enter a topic to get relevant research papers.
+          </p>
           <input
-            className="w-full border p-2 mt-3 rounded-md bg-green-50"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Enter topic here..."
+            className="w-full p-3 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md placeholder-gray-400"
           />
-          <button onClick={handleSearch} className="mt-4 w-full bg-green-800 text-white py-2 rounded">Search</button>
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="mt-4 w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-md font-semibold hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
         </div>
-        {/* Results Section */}
-        <div className="mt-6">
-          {recommendations.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="font-bold mb-2">📑 Recommended Papers</h3>
-              {recommendations.map((rec, index) => (
-                <div key={index} className="border-b py-2">
-                  <h4 className="font-semibold text-green-700">{rec.title}</h4>
-                  <p className="text-sm text-green-600">{rec.summary}</p>
-                  <a href={rec.link} className="text-green-500 text-sm">Read More</a>
-                </div>
-              ))}
+
+        {/* Results Section with ReactMarkdown */}
+        {markdownResults && (
+          <div className="mt-6 bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+            <h3 className="text-lg font-semibold text-purple-300 mb-4">📑 Recommended Papers</h3>
+            <div className="markdown-content">
+              <ReactMarkdown
+                components={{
+                  h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 text-purple-300" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2" {...props} />,
+                  a: ({node, ...props}) => <a className="text-purple-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                  p: ({node, ...props}) => <p className="text-gray-300 mb-3" {...props} />
+                }}
+              >
+                {markdownResults}
+              </ReactMarkdown>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
-// Sidebar Navigation Item
-function NavItem({ icon, text }) {
+// Sidebar Navigation Item - Keep this unchanged
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <div className="flex items-center space-x-2 p-2 hover:bg-green-600 rounded cursor-pointer">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      onClick={onClick}
+    >
       {icon}
-      <span>{text}</span>
+      <span className="text-white font-medium">{text}</span>
     </div>
   );
 }

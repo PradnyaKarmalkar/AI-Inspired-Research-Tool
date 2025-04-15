@@ -10,15 +10,21 @@ export default function QuestionAnsweringPage() {
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState('');
 
   const handleFileUpload = (e) => {
-    setFile(e.target.files[0]);
-    setUrl(''); // Clear URL input if file is uploaded
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setUploadedFileName(selectedFile.name);
+      setUrl('');
+    }
   };
 
   const handleUrlChange = (e) => {
     setUrl(e.target.value);
-    setFile(null); // Clear file input if URL is entered
+    setFile(null);
+    setUploadedFileName('');
   };
 
   const handleAskQuestion = async () => {
@@ -27,16 +33,21 @@ export default function QuestionAnsweringPage() {
       return;
     }
 
-    if ((file && url) || (!file && !url)) {
-      alert('❌ Please provide either a URL or a PDF, but not both.');
+    if (!file && !url) {
+      alert('❌ Please provide either a URL or a PDF file.');
       return;
     }
 
-    setLoading(true); // Start loading
+    setLoading(true);
+    setAnswer('');
 
     const formData = new FormData();
     formData.append('question', question);
-    file ? formData.append('pdf', file) : formData.append('url', url);
+    if (file) {
+      formData.append('pdf', file);
+    } else {
+      formData.append('url', url);
+    }
 
     try {
       const response = await fetch('http://localhost:5000/api/questions/ask', {
@@ -45,97 +56,124 @@ export default function QuestionAnsweringPage() {
       });
 
       const data = await response.json();
-      setAnswer(data.answer || 'No answer received.');
+      setAnswer(data.status === 'success' ? data.answer || 'No answer received.' : `Error: ${data.message}`);
     } catch (error) {
-      console.error('Error sending request:', error);
-      setAnswer('❌ Failed to fetch answer. Please try again.');
+      setAnswer(`❌ Failed to fetch answer: ${error.message}`);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#0f0f1b] text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-green-800 text-white p-5 flex flex-col">
-        <h1 className="text-3xl font-bold">Research Buddy</h1>
-        <nav className="mt-5 space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" />
+      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
+        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
+        <nav className="space-y-3">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" />
-          <NavItem icon={<Settings size={20} />} text="Setting" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")}/>
+          <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
-        <div className="mt-auto bg-green-800 p-3 rounded text-center">
-          <p className="text-sm">Mudra</p>
-          <p className="text-xs">22167/10000000 Mudra used</p>
-          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">
-            Upgrade
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 bg-green-100 p-6">
-        {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-5">
-          <input type="text" placeholder="Explore" className="w-96 px-3 py-2 border rounded-md" />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">
-            Join Aurota for $1/month
+      <main className="flex-1 p-6 overflow-y-auto">
+        {/* Top Bar */}
+        <div className="flex justify-between items-center mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Explore"
+            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+          />
+          <button
+            onClick={() => router.push('/billing')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
+            Join Us for $1/month
           </button>
         </div>
 
         {/* Back Button */}
-        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/home')}>
+        <button onClick={() => router.push('/home')} className="flex items-center text-purple-400 mb-4 hover:underline">
           <ArrowLeft size={20} className="mr-2" /> Back
         </button>
 
-        {/* Question Answering Section */}
-        <div className="bg-white p-6 rounded-lg shadow-md bg-green-50">
-          <h3 className="font-bold mb-4 text-green-600">🧠 Question Answering</h3>
-          <p className="text-sm text-green-600">
-            Enter a URL or upload a PDF, then ask a question.
+        {/* QA Box */}
+        <div className="bg-[#1e1e2f] p-6 rounded-lg shadow-md border border-[#2e2e40]">
+          <h3 className="text-xl font-semibold text-purple-400 mb-2">Question Answering</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Enter a URL or upload a PDF file, then ask a question about its content.
           </p>
 
-          {/* Input Section */}
-          <div className="mt-4 bg-green-50">
+          {/* Inputs */}
+          <div className="space-y-4">
             {/* URL Input */}
-            <input
-              className="w-full border p-2 rounded-md mb-2 bg-green-50"
-              value={url}
-              onChange={handleUrlChange}
-              placeholder="Enter URL here..."
-              disabled={file !== null} // Disable if PDF is uploaded
-            />
+            <div>
+              <label className="block text-sm mb-1 text-gray-300">Enter URL:</label>
+              <input
+                type="text"
+                value={url}
+                onChange={handleUrlChange}
+                placeholder="https://example.com/article"
+                disabled={file !== null}
+                className="w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white placeholder-gray-400"
+              />
+            </div>
 
             {/* File Upload */}
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              className="w-full border p-2 rounded-md mb-2"
-              disabled={url !== ''} // Disable if URL is entered
-            />
+            <div>
+              <label className="block text-sm mb-1 text-gray-300">Or Upload PDF:</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  id="pdf-upload"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={url !== ''}
+                />
+                <label htmlFor="pdf-upload" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded cursor-pointer">
+                  Choose File
+                </label>
+                <span className="text-sm text-gray-400">
+                  {uploadedFileName || "No file chosen"}
+                </span>
+              </div>
+            </div>
 
             {/* Question Input */}
-            <input
-              className="w-full border p-2 rounded-md bg-green-50"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask your question here..."
-            />
+            <div>
+              <label className="block text-sm mb-1 text-gray-300">Your Question:</label>
+              <textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask your question about the content..."
+                className="w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white min-h-[80px] placeholder-gray-400"
+              />
+            </div>
 
-            {/* Submit Button */}
+            {/* Ask Button */}
             <button
               onClick={handleAskQuestion}
-              className="mt-4 w-full bg-green-700 text-white py-2 rounded"
-              disabled={loading || (!url && !file)}
+              disabled={loading || (!url && !file) || !question}
+              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-md font-semibold hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? '⏳ Fetching Answer...' : 'Submit'}
+              {loading ? '⏳ Processing...' : 'Ask Question'}
             </button>
           </div>
 
-          {/* Answer Section */}
-          <div className="border p-3 min-h-[100px] rounded-md bg-green-50 mt-4">
-            {loading ? '⏳ Generating answer...' : answer || 'Your answer will appear here.'}
+          {/* Answer Output */}
+          <div className="mt-6">
+            <h4 className="font-medium text-gray-300 mb-2">Answer:</h4>
+            <div className="bg-[#2e2e40] border border-[#3a3a50] p-4 rounded-md min-h-[120px] text-white shadow-inner">
+              {loading ? (
+                <div className="animate-pulse text-purple-400">⏳ Processing your question...</div>
+              ) : answer ? (
+                <pre className="whitespace-pre-wrap">{answer}</pre>
+              ) : (
+                <div className="text-gray-500 italic">Your answer will appear here.</div>
+              )}
+            </div>
           </div>
         </div>
       </main>
@@ -143,12 +181,15 @@ export default function QuestionAnsweringPage() {
   );
 }
 
-// Sidebar Navigation Item
-function NavItem({ icon, text }) {
+{/* NavItem sidebar */}
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <div className="flex items-center space-x-2 p-2 hover:bg-green-600 rounded cursor-pointer">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      onClick={onClick}
+    >
       {icon}
-      <span>{text}</span>
+      <span className="text-white font-medium">{text}</span>
     </div>
   );
 }

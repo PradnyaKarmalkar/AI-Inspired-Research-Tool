@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
@@ -7,61 +7,144 @@ export default function SummarizationPage() {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [summary, setSummary] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSummarize = () => {
-    setSummary(`Summarized content of: "${input}"`); // Replace with API call
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type === 'application/pdf') {
+        setSelectedFile(file);
+        setError('');
+      } else {
+        setSelectedFile(null);
+        setError('Please select a PDF file');
+      }
+    }
+  };
+
+  const handleSummarize = async () => {
+    setError('');
+    setSummary('');
+
+    if (selectedFile) {
+      setIsUploading(true);
+      setIsProcessing(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch('http://localhost:5000/upload-pdf', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setSummary(data.summary || `File "${data.filename}" uploaded successfully. Summary will be generated soon.`);
+        } else {
+          setError(data.message || 'Error processing the PDF');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setError('Network error or server is not available');
+      } finally {
+        setIsUploading(false);
+        setIsProcessing(false);
+      }
+    } else if (input) {
+      setSummary(`Summarized content of: "${input}"`); // Replace with real API call
+    } else {
+      setError('Please enter a URL or upload a PDF file');
+    }
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#0f0f1b] text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-green-800 text-white p-5 flex flex-col">
-        <h1 className="text-3xl font-bold">Research Buddy</h1>
-        <nav className="mt-5 space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" />
+      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
+        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
+        <nav className="space-y-3">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" />
-          <NavItem icon={<Settings size={20} />} text="Setting" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")}/>
+          <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
-        <div className="mt-auto bg-green-800 p-3 rounded text-center">
-          <p className="text-sm">Mudra</p>
-          <p className="text-xs">22167/10000000 Mudra used</p>
-          <button className="bg-yellow-500 text-black px-3 py-1 mt-2 rounded">Upgrade</button>
-        </div>
       </aside>
+
       {/* Main Content */}
-      <main className="flex-1 bg-green-100 p-6">
+      <main className="flex-1 p-6 overflow-y-auto">
         {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-5">
-          <input type="text" placeholder="Explore" className="w-96 px-3 py-2 border rounded-md" />
-          <button className="bg-green-700 text-white px-4 py-2 rounded">Join Aurota for $1/month</button>
+        <div className="flex justify-between items-center mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Explore"
+            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+          />
+          <button
+            onClick={() => router.push('/billing')}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
+            Join Us for $1/month
+          </button>
         </div>
+
         {/* Back Button */}
-        <button className="flex items-center mb-4 text-green-700" onClick={() => router.push('/home')}>
+        <button
+          className="flex items-center text-purple-400 mb-4 hover:underline"
+          onClick={() => router.push('/home')}
+        >
           <ArrowLeft size={20} className="mr-2" /> Back
         </button>
+
         {/* Summarization Section */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div className="bg-white p-6 rounded-lg shadow bg-green-50">
-            <h3 className="font-bold mb-2 text-green-600">📝 Summarization</h3>
-            <p className="text-sm text-green-600">Enter a URL or upload a PDF to generate a summary</p>
+          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+            <h3 className="text-lg font-semibold text-purple-400 mb-2">📝 Summarization</h3>
+            <p className="text-sm text-gray-400 mb-3">
+              Enter a URL or upload a PDF to generate a summary.
+            </p>
             <input
               type="text"
-              className="w-full border p-2 mt-3 rounded-md text-green-600 bg-green-50"
+              className="w-full p-3 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md placeholder-gray-400 mb-2"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter URL here..."
             />
-            <p className="text-center mt-2">or</p>
-            <input type="file" className="w-full mt-2 border p-2 rounded-md" />
-            <button onClick={handleSummarize} className="mt-4 w-full bg-green-700 text-white py-2 rounded">Summarize</button>
+            <p className="text-center text-gray-500 my-2">or</p>
+            <input
+              type="file"
+              accept=".pdf"
+              className="w-full bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md file:bg-purple-600 file:text-white file:border-none file:rounded file:px-3 file:py-1"
+              onChange={handleFileChange}
+            />
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            {selectedFile && (
+              <p className="text-sm text-green-400 mt-2">Selected file: {selectedFile.name}</p>
+            )}
+            <button
+              onClick={handleSummarize}
+              disabled={isUploading}
+              className={`mt-4 w-full py-3 rounded-md font-semibold transition ${
+                isUploading
+                  ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90'
+              }`}
+            >
+              {isUploading ? 'Uploading...' : 'Summarize'}
+            </button>
           </div>
+
           {/* Result Section */}
-          <div className="bg-white p-6 rounded-lg shadow bg-green-50">
-            <h3 className="font-bold mb-2 text-green-600">📜 Result</h3>
-            <div className="border p-3 min-h-[100px] rounded-md bg-green-50">
-              {summary || 'Your summarized content will appear here.'}
+          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+            <h3 className="text-lg font-semibold text-purple-300 mb-4">📜 Result</h3>
+            <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 whitespace-pre-wrap">
+              {isProcessing
+                ? 'Processing your document, please wait...'
+                : summary || 'Your summarized content will appear here.'}
             </div>
           </div>
         </div>
@@ -71,11 +154,14 @@ export default function SummarizationPage() {
 }
 
 // Sidebar Navigation Item
-function NavItem({ icon, text }) {
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
-    <div className="flex items-center space-x-2 p-2 hover:bg-green-600 rounded cursor-pointer">
+    <div
+      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      onClick={onClick}
+    >
       {icon}
-      <span>{text}</span>
+      <span className="text-white font-medium">{text}</span>
     </div>
   );
 }
