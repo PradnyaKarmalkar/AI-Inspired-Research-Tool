@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import ReactMarkdown from 'react-markdown';
 
 export default function ReportGeneratorPage() {
   const router = useRouter();
@@ -84,7 +85,7 @@ export default function ReportGeneratorPage() {
         <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
         <nav className="flex-grow space-y-4">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/home")} />
-          <NavItem icon={<History size={20} />} text="History" />
+          <NavItem icon={<History size={20} />} text="History" onClick={() => router.push("/history")} />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
@@ -220,8 +221,24 @@ export default function ReportGeneratorPage() {
             </div>
             <div className="border border-[#3a3a50] p-4 max-h-[600px] overflow-y-auto rounded-md bg-[#2a2a40] text-gray-300 whitespace-pre-wrap">
               {report ? (
-                <div className="markdown-content">
-                  {report}
+                <div className="markdown-content prose prose-invert max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 text-purple-300" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 text-purple-300" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2" {...props} />,
+                      p: ({node, ...props}) => <p className="text-gray-300 mb-3 leading-relaxed" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4 text-gray-300" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4 text-gray-300" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-2" {...props} />,
+                      code: ({node, ...props}) => <code className="bg-[#3a3a50] px-2 py-1 rounded text-sm" {...props} />,
+                      pre: ({node, ...props}) => <pre className="bg-[#3a3a50] p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-4 italic my-4" {...props} />,
+                      a: ({node, ...props}) => <a className="text-purple-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                    }}
+                  >
+                    {report}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 'Your generated report will appear here.'

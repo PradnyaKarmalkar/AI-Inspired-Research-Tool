@@ -66,14 +66,9 @@ class ReportGenerator:
             result = filter.transform_documents(documents=texts)
 
             # Prepare prompt for direct streaming
-            if doc_length < 10:
-                # For shorter documents, use a simple prompt
-                prompt = "\n\n".join([doc.page_content for doc in result])
-                prompt = f"Generate a report for the following document retining the key points and important details:\n\n{prompt} \n\n FORMAT YOUR RESPONSE IN MARKDOWN."
-                
-            else:
+            
                 # For longer documents, provide more context
-                prompt = f"""
+            prompt = f"""
                 Generate a report for the following document which has been divided into {len(result)} sections. 
                 Provide a comprehensive report that captures the main points and important details.
                 
@@ -84,8 +79,8 @@ class ReportGenerator:
                 - FORMAT YOUR RESPONSE IN MARKDOWN.
                 """
                 
-                for i, doc in enumerate(result):
-                    prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"
+            for i, doc in enumerate(result):
+                prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"
 
             # Collect the complete summary
             complete_report = ""

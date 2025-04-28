@@ -399,7 +399,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold mb-6"> Research Buddy</h1>
         <nav className="space-y-3">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
-          <NavItem icon={<History size={20} />} text="History" />
+          <NavItem icon={<History size={20} />} text="History" onClick={() => router.push("/history")} />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Settings" active />
         </nav>

@@ -43,10 +43,10 @@ export default function RecommendationPage() {
     <div className="flex h-screen bg-[#0f0f1b] text-white">
       {/* Sidebar - Keep this unchanged */}
       <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
-        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
+        <h1 className="text-2xl font-bold mb-6"> Research Buddy</h1>
         <nav className="space-y-3">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')}  />
-          <NavItem icon={<History size={20} />} text="History" />
+          <NavItem icon={<History size={20} />} text="History" onClick={() => router.push("/history")}  />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Settings" onClick={() => router.push("/settings_pg")} />
         </nav>
