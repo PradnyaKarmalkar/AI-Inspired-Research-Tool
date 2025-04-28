@@ -3,8 +3,11 @@ from werkzeug.utils import secure_filename
 import os
 from qa_model import QAModel
 import tempfile
+import bcrypt
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 qa_model = QAModel()
 
 # Configure upload folder
@@ -16,6 +19,33 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/update-password', methods=['POST'])
+def update_password():
+    try:
+        data = request.get_json()
+        if not data or 'currentPassword' not in data or 'newPassword' not in data:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+        # Get user from localStorage (in a real app, this would be from a database)
+        user = data.get('user')
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+        # Verify current password (in a real app, this would be hashed)
+        if user.get('password') != data['currentPassword']:
+            return jsonify({'status': 'error', 'message': 'Current password is incorrect'}), 401
+
+        # Update password (in a real app, this would be hashed)
+        user['password'] = data['newPassword']
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Password updated successfully',
+            'user': user
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():

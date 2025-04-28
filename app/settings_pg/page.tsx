@@ -105,22 +105,13 @@ export default function SettingsPage() {
 
   const handleProfileUpdate = async () => {
     try {
-      const response = await fetch('http://localhost:5000/update-profile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        alert('Profile updated successfully');
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } else {
-        alert(data.message || 'Failed to update profile');
-      }
+      // Update localStorage with new user data
+      const updatedUser = {
+        ...JSON.parse(localStorage.getItem('user') || '{}'),
+        ...userData,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      alert('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Error updating profile. Please try again.');
@@ -134,7 +125,9 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/update-password', {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      const response = await fetch('http://localhost:5000/api/update-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,12 +135,16 @@ export default function SettingsPage() {
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
+          user: user
         }),
       });
 
       const data = await response.json();
       if (data.status === 'success') {
         alert('Password updated successfully');
+        // Update localStorage with new user data
+        localStorage.setItem('user', JSON.stringify(data.user));
+        // Clear password fields
         setPasswordData({
           currentPassword: '',
           newPassword: '',
@@ -170,7 +167,7 @@ export default function SettingsPage() {
       content: (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
               {profileImage ? (
                 <img
                   src={profileImage}
@@ -181,13 +178,29 @@ export default function SettingsPage() {
                 <User size={40} className="text-gray-400" />
               )}
             </div>
-            <div>
+            <div className="space-y-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
               <button
-                onClick={handleRemoveImage}
+                onClick={() => fileInputRef.current?.click()}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                disabled={isUploading}
               >
-                Change Picture
+                {isUploading ? 'Uploading...' : 'Upload Picture'}
               </button>
+              {profileImage && (
+                <button
+                  onClick={handleRemoveImage}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                >
+                  Remove Picture
+                </button>
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -196,7 +209,7 @@ export default function SettingsPage() {
               type="text"
               value={userData.username}
               onChange={(e) => setUserData({ ...userData, username: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter username"
             />
           </div>
@@ -206,7 +219,7 @@ export default function SettingsPage() {
               type="email"
               value={userData.email}
               onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter email"
             />
           </div>
@@ -316,32 +329,32 @@ export default function SettingsPage() {
       content: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Current Password</label>
+            <label className="block text-sm font-medium ">Current Password</label>
             <input
               type="password"
               value={passwordData.currentPassword}
               onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter current password"
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium">New Password</label>
+            <label className="block text-sm font-medium ">New Password</label>
             <input
               type="password"
               value={passwordData.newPassword}
               onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter new password"
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Confirm New Password</label>
+            <label className="block text-sm font-medium ">Confirm New Password</label>
             <input
               type="password"
               value={passwordData.confirmPassword}
               onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Confirm new password"
             />
           </div>

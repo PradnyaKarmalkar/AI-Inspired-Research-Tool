@@ -1,13 +1,25 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Home, History, CreditCard, Settings, LogOut } from "lucide-react";
+import { Home, History, CreditCard, Settings, LogOut, User } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 export default function HomePage() {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch user data from localStorage
+    const user = localStorage.getItem('user');
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      if (parsedUser.profileImage) {
+        setProfileImage(parsedUser.profileImage);
+      }
+    }
+  }, []);
 
   const handleCardClick = (title: string) => {
     if (title === "Summarization") {
@@ -38,7 +50,20 @@ export default function HomePage() {
     <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
       <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
-        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={24} className="text-gray-400" />
+            )}
+          </div>
+          <h1 className="text-3xl font-bold">Research Buddy</h1>
+        </div>
         <nav className="flex-grow space-y-4">
           <NavItem icon={<Home size={20} />} text="Home" />
           <NavItem icon={<History size={20} />} text="History" />
