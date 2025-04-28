@@ -1,8 +1,13 @@
 "use client";
 import React, { useState } from "react";
 import { Toggle } from "@radix-ui/react-toggle";
+import { useRouter } from "next/navigation";
+import { Home, History, CreditCard, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
-export default function PricingPage() {
+export default function BillingPage() {
+  const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [isYearly, setIsYearly] = useState(true);
 
   const plans = [
@@ -51,10 +56,39 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#11111a] text-white py-10 px-4">
-      <div className="max-w-6xl mx-auto text-center">
-        <h1 className="text-4xl font-bold">Our Pricing Plans</h1>
-        <p className="text-gray-400 mt-2 mb-6">Pick an account plan that fits your workflow</p>
+    <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
+      {/* Sidebar */}
+      <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <nav className="flex-grow space-y-4">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/home")} />
+          <NavItem icon={<History size={20} />} text="History" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
+          <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
+        </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            router.push('/home');
+          }}
+          className="mt-auto bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-xl flex items-center justify-center hover:opacity-90 transition duration-200"
+        >
+          <LogOut size={18} className="mr-2" />
+          Logout
+        </button>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {/* Back to Home Button */}
+        <div className="flex justify-end mb-6">
+          <button
+            onClick={() => router.push('/home')}
+            className={`flex items-center ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} hover:underline`}
+          >
+            <ArrowLeft size={20} className="mr-2" /> Back to Home
+          </button>
+        </div>
 
         {/* Toggle */}
         <div className="flex justify-center items-center gap-4 mb-10">
@@ -117,7 +151,23 @@ export default function PricingPage() {
             );
           })}
         </div>
-      </div>
+      </main>
+    </div>
+  );
+}
+
+// Sidebar Navigation Item
+function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
+  const { isDarkMode } = useTheme();
+  return (
+    <div
+      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
+        isDarkMode ? 'hover:bg-[#2e2e40]' : 'hover:bg-gray-100'
+      }`}
+      onClick={onClick}
+    >
+      {icon}
+      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{text}</span>
     </div>
   );
 }

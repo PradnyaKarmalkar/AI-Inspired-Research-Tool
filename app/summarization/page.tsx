@@ -71,7 +71,7 @@ export default function SummarizationPage() {
       <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
         <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
         <nav className="flex-grow space-y-4">
-          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/")} />
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/home")} />
           <NavItem icon={<History size={20} />} text="History" />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
@@ -90,12 +90,12 @@ export default function SummarizationPage() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto">
-        <div className={`p-8 rounded-xl shadow-md mb-8 ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+        {/* <div className={`p-8 rounded-xl shadow-md mb-8 ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
           <h2 className="text-3xl font-bold mb-4">Summarization</h2>
           <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
             Generate summaries of your research papers and documents.
           </p>
-        </div>
+        </div> */}
 
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-6">
