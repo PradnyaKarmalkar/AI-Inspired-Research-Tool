@@ -1,11 +1,13 @@
 "use client";
 import { useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useTheme } from "../context/ThemeContext";
 
 export default function SummarizationPage() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [input, setInput] = useState('');
   const [summary, setSummary] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -64,26 +66,43 @@ export default function SummarizationPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f0f1b] text-white">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
-      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
-        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
-        <nav className="space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
+      <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <nav className="flex-grow space-y-4">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/")} />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")}/>
-          <NavItem icon={<Settings size={20} />} text="Settings" />
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
+          <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            router.push('/login');
+          }}
+          className="mt-auto bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-xl flex items-center justify-center hover:opacity-90 transition duration-200"
+        >
+          <LogOut size={18} className="mr-2" />
+          Logout
+        </button>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto">
+        <div className={`p-8 rounded-xl shadow-md mb-8 ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+          <h2 className="text-3xl font-bold mb-4">Summarization</h2>
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+            Generate summaries of your research papers and documents.
+          </p>
+        </div>
+
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-6">
           <input
             type="text"
             placeholder="🔍 Explore"
-            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+            className={`w-96 px-4 py-2 ${isDarkMode ? 'bg-[#2e2e40] text-white border border-[#3a3a50]' : 'bg-gray-100 text-gray-900 border border-gray-300'} rounded-md focus:outline-none focus:ring focus:ring-purple-600`}
           />
           <button
             onClick={() => router.push('/billing')}
@@ -103,7 +122,7 @@ export default function SummarizationPage() {
         {/* Summarization Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+          <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
             <h3 className="text-lg font-semibold text-purple-400 mb-2">📝 Summarization</h3>
             <p className="text-sm text-gray-400 mb-3">
               Upload a PDF to generate a summary.
@@ -119,7 +138,7 @@ export default function SummarizationPage() {
             <input
               type="file"
               accept=".pdf"
-              className="w-full bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md file:bg-purple-600 file:text-white file:border-none file:rounded file:px-3 file:py-1"
+              className={`w-full bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md file:bg-purple-600 file:text-white file:border-none file:rounded file:px-3 file:py-1 ${isDarkMode ? '' : 'bg-gray-100'}`}
               onChange={handleFileChange}
             />
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -140,7 +159,7 @@ export default function SummarizationPage() {
           </div>
 
           {/* Result Section */}
-          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+          <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
             <h3 className="text-lg font-semibold text-purple-300 mb-4">📜 Result</h3>
             <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 overflow-y-auto max-h-[500px]">
               {isProcessing ? (
@@ -183,13 +202,16 @@ export default function SummarizationPage() {
 
 // Sidebar Navigation Item
 function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
+  const { isDarkMode } = useTheme();
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
+        isDarkMode ? 'hover:bg-[#2e2e40]' : 'hover:bg-gray-100'
+      }`}
       onClick={onClick}
     >
       {icon}
-      <span className="text-white font-medium">{text}</span>
+      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{text}</span>
     </div>
   );
 }

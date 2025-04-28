@@ -1,13 +1,15 @@
-'use client';
+"use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useTheme } from "../context/ThemeContext";
 
 const API_BASE_URL = 'http://localhost:5000';
 
 export default function QuestionAnsweringPage() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -138,26 +140,47 @@ export default function QuestionAnsweringPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f0f1b] text-white">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
-      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
-        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
-        <nav className="space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
+      <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <nav className="flex-grow space-y-4">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/")} />
           <NavItem icon={<History size={20} />} text="History" />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
-          <NavItem icon={<Settings size={20} />} text="Settings" />
+          <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            router.push('/login');
+          }}
+          className="mt-auto bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-xl flex items-center justify-center hover:opacity-90 transition duration-200"
+        >
+          <LogOut size={18} className="mr-2" />
+          Logout
+        </button>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto">
-        {/* Top Bar */}
+        <div className={`p-8 rounded-xl shadow-md mb-8 ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+          <h2 className="text-3xl font-bold mb-4">Question Answering</h2>
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+            Ask questions about your research documents and get instant answers.
+          </p>
+        </div>
+
+        {/* Top Navigation */}
         <div className="flex justify-between items-center mb-6">
           <input
             type="text"
             placeholder="🔍 Explore"
-            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+            className={`w-96 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isDarkMode 
+                ? 'bg-[#2e2e40] text-white border-[#3a3a50]' 
+                : 'bg-white text-gray-900 border-gray-200'
+            }`}
           />
           <button
             onClick={() => router.push('/billing')}
@@ -166,95 +189,43 @@ export default function QuestionAnsweringPage() {
           </button>
         </div>
 
-        {/* Back Button */}
-        <button onClick={() => router.push('/home')} className="flex items-center text-purple-400 mb-4 hover:underline">
-          <ArrowLeft size={20} className="mr-2" /> Back
-        </button>
-
-        {/* QA Box */}
-        <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
-          <h3 className="text-xl font-semibold text-purple-400 mb-2">Question Answering</h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Upload a PDF file, then ask a question about its content.
-          </p>
-
-          {checkingDocuments ? (
-            <div className="text-center py-4">
-              <div className="animate-pulse text-purple-400">Checking for available documents...</div>
-            </div>
-          ) : (
-            /* Inputs */
-            <div className="space-y-4">
-              {/* File Upload */}
-              <div>
-                <label className="block text-sm mb-1 text-gray-300">Upload PDF:</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    id="pdf-upload"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={uploadStatus === 'uploading'}
-                  />
-                  <label
-                    htmlFor="pdf-upload"
-                    className={`px-4 py-2 rounded cursor-pointer ${uploadStatus === 'uploading'
-                        ? 'bg-gray-600 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-700'
-                      } text-white transition`}
-                  >
-                    {uploadStatus === 'uploading' ? 'Uploading...' : 'Choose File'}
-                  </label>
-                  <span className="text-sm text-gray-400 truncate max-w-xs">
-                    {uploadedFileName || "No file chosen"}
-                  </span>
-                </div>
-                {uploadStatus !== 'idle' && (
-                  <div className={`mt-2 text-sm ${uploadStatus === 'success' ? 'text-green-400' :
-                      uploadStatus === 'error' ? 'text-red-400' :
-                        'text-yellow-400'
-                    }`}>
-                    {uploadMessage}
-                  </div>
-                )}
-              </div>
-
-              {/* Question Input */}
-              <div>
-                <label className="block text-sm mb-1 text-gray-300">Your Question:</label>
-                <textarea
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ask your question..."
-                  className={`w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white min-h-[80px] placeholder-gray-400 transition ${!isDocumentReady ? 'opacity-75' : ''}`}
-                  disabled={!isDocumentReady}
-                />
-                {!isDocumentReady && uploadStatus !== 'uploading' && uploadStatus !== 'success' && (
-                  <p className="text-xs text-yellow-400 mt-1">
-                    Please upload a document first
-                  </p>
-                )}
-              </div>
-
-              {/* Ask Button */}
+        {/* Question Answering Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Input Section */}
+          <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-[#1e1e2f] border-[#2e2e40]' : 'bg-white border-gray-200'}`}>
+            <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-purple-400' : 'text-gray-900'}`}>❓ Ask a Question</h3>
+            <p className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Enter your question about the research document.</p>
+            <form onSubmit={handleAskQuestion}>
+              <textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Type your question here..."
+                className={`w-full p-4 rounded-lg border mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isDarkMode 
+                    ? 'bg-[#2e2e40] text-white border-[#3a3a50]' 
+                    : 'bg-white text-gray-900 border-gray-200'
+                }`}
+                rows={4}
+              />
               <button
-                onClick={handleAskQuestion}
-                disabled={loading || !isDocumentReady || !question.trim()}
-                className={`w-full py-3 rounded-md font-semibold transition ${loading || !isDocumentReady || !question.trim()
-                    ? 'bg-gray-600 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90'
-                  }`}
+                type="submit"
+                className="w-full py-3 rounded-md font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition"
               >
-                {loading ? '⏳ Processing...' : 'Ask Question'}
+                Get Answer
               </button>
-            </div>
-          )}
+            </form>
+          </div>
 
-          {/* Answer Output */}
-          <div className="mt-6">
-            <h4 className="font-medium text-gray-300 mb-2">Answer:</h4>
-            <div className="bg-[#2e2e40] border border-[#3a3a50] p-4 rounded-md min-h-[120px] text-white shadow-inner">
+          {/* Answer Section */}
+          <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-[#1e1e2f] border-[#2e2e40]' : 'bg-white border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-purple-300' : 'text-gray-900'}`}>💡 Answer</h3>
+            </div>
+            <div className={`border rounded-md p-4 min-h-[400px] ${
+              isDarkMode 
+                ? 'border-[#3a3a50] bg-[#2a2a40] text-gray-300' 
+                : 'border-gray-200 bg-gray-50 text-gray-700'
+            }`}>
               {loading ? (
                 <div className="animate-pulse text-purple-400">⏳ Processing your question...</div>
               ) : answer ? (
@@ -289,13 +260,16 @@ export default function QuestionAnsweringPage() {
 }
 
 function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
+  const { isDarkMode } = useTheme();
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
+        isDarkMode ? 'hover:bg-[#2e2e40]' : 'hover:bg-gray-100'
+      }`}
       onClick={onClick}
     >
       {icon}
-      <span className="text-white font-medium">{text}</span>
+      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{text}</span>
     </div>
   );
 }

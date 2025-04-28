@@ -1,10 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ReportGeneratorPage() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   const [url, setUrl] = useState('');
   const [report, setReport] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -13,6 +15,7 @@ export default function ReportGeneratorPage() {
   const [uploadError, setUploadError] = useState('');
   const [numPages, setNumPages] = useState(3);
   const [processingTime, setProcessingTime] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,26 +78,49 @@ export default function ReportGeneratorPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f0f1b] text-white">
+    <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
-      <aside className="w-72 bg-[#1a1a2f] p-6 flex flex-col border-r border-[#2e2e40]">
-        <h1 className="text-2xl font-bold mb-6">🧠 Research Buddy</h1>
-        <nav className="space-y-3">
-          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
+      <aside className={`w-72 p-6 flex flex-col shadow-md ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+        <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
+        <nav className="flex-grow space-y-4">
+          <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/")} />
           <NavItem icon={<History size={20} />} text="History" />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
-          <NavItem icon={<Settings size={20} />} text="Settings" />
+          <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            router.push('/login');
+          }}
+          className="mt-auto bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-xl flex items-center justify-center hover:opacity-90 transition duration-200"
+        >
+          <LogOut size={18} className="mr-2" />
+          Logout
+        </button>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto">
+        <div className={`p-8 rounded-xl shadow-md mb-8 ${isDarkMode ? 'bg-[#1e1e2f]' : 'bg-white'}`}>
+          <h2 className="text-3xl font-bold mb-4">Reports</h2>
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+            View and manage your research reports.
+          </p>
+        </div>
+
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-6">
           <input
             type="text"
             placeholder="🔍 Explore"
-            className="w-96 px-4 py-2 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md focus:outline-none focus:ring focus:ring-purple-600"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-96 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isDarkMode 
+                ? 'bg-[#2e2e40] text-white border-[#3a3a50]' 
+                : 'bg-white text-gray-900 border-gray-200'
+            }`}
           />
           <button
             onClick={() => router.push('/billing')}
@@ -105,7 +131,7 @@ export default function ReportGeneratorPage() {
 
         {/* Back Button */}
         <button
-          className="flex items-center text-purple-400 mb-4 hover:underline"
+          className={`flex items-center text-purple-400 mb-4 hover:underline ${isDarkMode ? '' : 'text-gray-600'}`}
           onClick={() => router.push('/home')}
         >
           <ArrowLeft size={20} className="mr-2" /> Back
@@ -114,9 +140,9 @@ export default function ReportGeneratorPage() {
         {/* Report Generator Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
-            <h3 className="text-lg font-semibold text-purple-400 mb-2">📄 Report Generator</h3>
-            <p className="text-sm text-gray-400 mb-3">Upload a PDF to generate a comprehensive report.</p>
+          <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
+            <h3 className={`text-lg font-semibold text-purple-400 mb-2 ${isDarkMode ? '' : 'text-gray-900'}`}>📄 Report Generator</h3>
+            <p className={`text-sm text-gray-400 mb-3 ${isDarkMode ? '' : 'text-gray-600'}`}>Upload a PDF to generate a comprehensive report.</p>
             <div className="border-2 border-dashed border-[#3a3a50] rounded-md p-6 mb-4">
               <input
                 type="file"
@@ -142,7 +168,7 @@ export default function ReportGeneratorPage() {
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                   />
                 </svg>
-                <span className="text-sm text-gray-400">
+                <span className={`text-sm text-gray-400 ${isDarkMode ? '' : 'text-gray-600'}`}>
                   {fileName || 'Click to upload PDF'}
                 </span>
               </label>
@@ -150,7 +176,7 @@ export default function ReportGeneratorPage() {
 
             {/* Report Length Control */}
             <div className="mb-4">
-              <label className="block text-sm text-gray-400 mb-2">
+              <label className={`block text-sm text-gray-400 mb-2 ${isDarkMode ? '' : 'text-gray-600'}`}>
                 Report Length (pages):
               </label>
               <div className="flex items-center">
@@ -167,7 +193,7 @@ export default function ReportGeneratorPage() {
             </div>
 
             {uploadError && (
-              <p className="text-red-500 text-sm mb-4">{uploadError}</p>
+              <p className={`text-red-500 text-sm mb-4 ${isDarkMode ? '' : 'text-gray-600'}`}>{uploadError}</p>
             )}
 
             <button
@@ -183,11 +209,11 @@ export default function ReportGeneratorPage() {
           </div>
 
           {/* Result Section */}
-          <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
+          <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-purple-300">📑 Generated Report</h3>
+              <h3 className={`text-lg font-semibold text-purple-300 ${isDarkMode ? '' : 'text-gray-900'}`}>📑 Generated Report</h3>
               {processingTime && (
-                <span className="text-xs text-gray-400">
+                <span className={`text-xs text-gray-400 ${isDarkMode ? '' : 'text-gray-600'}`}>
                   Generated in {processingTime}
                 </span>
               )}
@@ -210,13 +236,16 @@ export default function ReportGeneratorPage() {
 
 // Sidebar Navigation Item
 function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
+  const { isDarkMode } = useTheme();
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-[#2e2e40] transition"
+      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
+        isDarkMode ? 'hover:bg-[#2e2e40]' : 'hover:bg-gray-100'
+      }`}
       onClick={onClick}
     >
       {icon}
-      <span className="text-white font-medium">{text}</span>
+      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{text}</span>
     </div>
   );
 }

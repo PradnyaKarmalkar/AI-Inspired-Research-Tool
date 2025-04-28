@@ -48,7 +48,7 @@ export default function RecommendationPage() {
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')}  />
           <NavItem icon={<History size={20} />} text="History" />
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
-          <NavItem icon={<Settings size={20} />} text="Settings" />
+          <NavItem icon={<Settings size={20} />} text="Settings" onClick={() => router.push("/settings_pg")} />
         </nav>
       </aside>
 
