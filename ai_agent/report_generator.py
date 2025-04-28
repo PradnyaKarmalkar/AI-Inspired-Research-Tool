@@ -8,10 +8,10 @@ import ai_agent.config as config
 import os
 
 
-class DocumentSummarizer:
+class ReportGenerator:
     def __init__(self):
-        self.chunk_size = config.CHUNK_SIZE
-        self.chunk_overlap = config.CHUNK_OVERLAP
+        self.chunk_size = config.REPORT_CHUNK_SIZE
+        self.chunk_overlap = config.REPORT_CHUNK_OVERLAP
         self.summarize_llm = config.SUMMARIZER_MODEL
         self.embed_model = config.EMBED_MODEL
 
@@ -37,7 +37,7 @@ class DocumentSummarizer:
         texts = text_splitter.split_documents(pages)
         return texts
 
-    def summarizer(self, file_path):
+    def generate_report(self, file_path):
         # Extract the document
         texts = self.extractText(file_path)
         doc_length = len(texts)
@@ -69,17 +69,18 @@ class DocumentSummarizer:
             if doc_length < 10:
                 # For shorter documents, use a simple prompt
                 prompt = "\n\n".join([doc.page_content for doc in result])
-                prompt = f"Please summarize the following document:\n\n{prompt}"
+                prompt = f"Generate a report for the following document retining the key points and important details:\n\n{prompt} \n\n FORMAT YOUR RESPONSE IN MARKDOWN."
+                
             else:
                 # For longer documents, provide more context
                 prompt = f"""
-                Please summarize the following document which has been divided into {len(result)} sections. 
-                Provide a comprehensive summary that captures the main points and important details.
+                Generate a report for the following document which has been divided into {len(result)} sections. 
+                Provide a comprehensive report that captures the main points and important details.
                 
                 Important:
                 - Do not hallucinate or add information not found in the document
                 - Create appropriate headings and subheadings based on the content
-                - Use bullets and new lines to make the summary more readable.
+                - Use bullets and new lines to make the report more readable.
                 - FORMAT YOUR RESPONSE IN MARKDOWN.
                 """
                 
@@ -87,7 +88,7 @@ class DocumentSummarizer:
                     prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"
 
             # Collect the complete summary
-            complete_summary = ""
+            complete_report = ""
             # Stream directly from the LLM
             for chunk in llm.stream(prompt):
                 # Extract just the text content from the response
@@ -101,13 +102,13 @@ class DocumentSummarizer:
 
                 # Add to complete summary
                 if chunk_text:
-                    complete_summary += chunk_text
+                    complete_report += chunk_text
                     yield chunk_text
 
             # Return the complete summary for saving
-            return complete_summary
+            return complete_report
 
         except Exception as e:
-            error_message = f"Error during summarization: {str(e)}"
+            error_message = f"Error during report generation: {str(e)}"
             yield error_message
             return error_message

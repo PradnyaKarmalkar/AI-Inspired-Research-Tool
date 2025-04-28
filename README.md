@@ -1,6 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Document Processing Application
+
+A comprehensive web application that combines Next.js frontend with Flask backend for various AI-powered document processing tasks.
+
+## Features
+
+- **Document Summarization**: Upload PDF documents and get AI-generated summaries
+- **Question Answering**: Ask questions about uploaded documents or web content
+- **Research Paper Recommendations**: Get suggestions for related research papers
+- **User Authentication**: Secure signup and login functionality
+
+## Tech Stack
+
+### Frontend
+- **Next.js 15** with React 19
+- **TypeScript** for type-safe code
+- **TailwindCSS** for styling
+- **Axios** for API requests
+
+### Backend
+- **Flask** for the REST API
+- **Google Generative AI** for document processing
+- **LangChain** for AI operations and document handling
+- **MongoDB** (via Mongoose) for data storage
 
 ## Getting Started
+
+### Prerequisites
+- Node.js (v18 or newer)
+- Python (v3.8 or newer)
+- MongoDB instance
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/YourUsername/my-next-app.git
+cd my-next-app
+```
+
+2. Install frontend dependencies
+```bash
+npm install
+```
+
+3. Install backend dependencies
+```bash
+pip install -r requirement.txt
+```
+
+4. Set up environment variables by creating a .env file in the root directory
 
 First, run the development server:
 

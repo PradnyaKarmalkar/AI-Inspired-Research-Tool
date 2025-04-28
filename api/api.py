@@ -1,25 +1,52 @@
-from ai_agent.summarizer import DocumentSummarizer
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import hashlib
 import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ai_agent.summarizer import DocumentSummarizer
+from flask import Flask, request, jsonify, make_response
+from flask_cors import CORS
+import hashlib
+
+
 from werkzeug.utils import secure_filename
 import time
 import subprocess
 from ai_agent.recommedPapers import SearchPapers
+from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.query_auth import create_user, check_user_exists, verify_user
 
+# Load environment variables safely
+load_dotenv()
 # Setup Google API Key
-os.environ["GOOGLE_API_KEY"] = "AIzaSyCxvk44WZFXY-fWlAi-5d3MYKU56NoWJTE"
-# Now import from the database folder
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if GOOGLE_API_KEY:
+    os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+else:
+    print("WARNING: GOOGLE_API_KEY not found in environment variables")
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Accept", "Authorization"],
+        "supports_credentials": True
+    }
+})
 
+# Increase max content length for file uploads
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+app.config['UPLOAD_FOLDER'] = 'uploads/report_uploads'
+
+# Ensure upload directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# File upload configuration
+ALLOWED_EXTENSIONS = {'pdf'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -79,8 +106,8 @@ def login():
         return jsonify(result), 401
 
 
-@app.route('/upload-pdf', methods=['POST'])
-def upload_pdf():
+@app.route('/upload-pdf-sum', methods=['POST'])
+def upload_pdf_sum():
     if 'file' not in request.files:
         return jsonify({"status": "error", "message": "No file part"}), 400
 
@@ -89,7 +116,10 @@ def upload_pdf():
     if file.filename == '':
         return jsonify({"status": "error", "message": "No selected file"}), 400
 
-    if file and file.filename.endswith('.pdf'):
+    if not allowed_file(file.filename):
+        return jsonify({"status": "error", "message": "File must be a PDF"}), 400
+
+    try:
         # Create upload directory if it doesn't exist
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)  # Go up 1 level
@@ -133,123 +163,165 @@ def upload_pdf():
                 "error": str(e)
             }), 200
 
-    return jsonify({"status": "error", "message": "File must be a PDF"}), 400
+    except Exception as e:
+        return jsonify({
+            "status": "error", 
+            "message": f"Error during upload: {str(e)}"
+        }), 500
 
-@app.route('/api/questions/ask', methods=['POST'])
-def ask_question():
-    # Check if 'question' is in the request
-    if 'question' not in request.form:
-        return jsonify({"status": "error", "message": "No question provided"}), 400
+@app.route('/upload-pdf-qa', methods=['POST'])
+def upload_pdf_qa():    
+    try:
+        if 'file' not in request.files:
+            return jsonify({"status": "error", "message": "No file part"}), 400
 
-    question = request.form['question']
+        file = request.files['file']
 
-    # Handle PDF upload
-    if 'pdf' in request.files:
-        pdf_file = request.files['pdf']
-
-        if pdf_file.filename == '':
+        if file.filename == '':
             return jsonify({"status": "error", "message": "No selected file"}), 400
+            
+        if not allowed_file(file.filename):
+            return jsonify({"status": "error", "message": "File must be a PDF"}), 400
 
-        if pdf_file and pdf_file.filename.endswith('.pdf'):
-            # Create upload directory if it doesn't exist
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.dirname(current_dir)  # Go up 1 level
-            upload_dir = os.path.join(project_root, 'uploads', 'qa_uploads')
+        # Check file size 
+        if request.content_length > app.config['MAX_CONTENT_LENGTH']:
+            return jsonify({"status": "error", "message": "File too large (max 16MB)"}), 413
 
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
+        # Create upload directory if it doesn't exist
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)  # Go up 1 level
+        upload_dir = os.path.join(project_root, 'ai_agent', 'documents')
 
-            # Secure the filename and save the file
-            filename = secure_filename(pdf_file.filename)
-            timestamp = str(int(time.time()))
-            saved_filename = f"{timestamp}_{filename}"
-            file_path = os.path.join(upload_dir, saved_filename)
-
-            pdf_file.save(file_path)
-
-            # Construct path to your QA script
-            qa_script_path = os.path.join(project_root, 'ai_agent', 'qa_model.py')
-
-            try:
-                # Execute the QA script with the PDF path and question as arguments
-                result = subprocess.run(
-                    ['python', qa_script_path, file_path, question],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    encoding='utf-8'
-                )
-
-                # Process the output
-                output = result.stdout.strip()
-
-                # If there's an error, check stderr
-                if not output and result.stderr:
-                    return jsonify({
-                        "status": "error",
-                        "message": "Error processing question",
-                        "error": result.stderr
-                    }), 500
-
-                return jsonify({
-                    "status": "success",
-                    "answer": output,
-                    "filename": saved_filename
-                }), 200
-
-            except Exception as e:
-                print(f"Error running QA model: {str(e)}")
+        # Ensure the directory exists and is writable
+        try:
+            os.makedirs(upload_dir, exist_ok=True)
+            if not os.access(upload_dir, os.W_OK):
                 return jsonify({
                     "status": "error",
-                    "message": "Error processing question",
-                    "error": str(e)
+                    "message": "Upload directory is not writable"
                 }), 500
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to create upload directory: {str(e)}"
+            }), 500
 
-    # Handle URL input
-    elif 'url' in request.form:
-        url = request.form['url']
-
-        # Construct path to your QA script for URLs
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
-        qa_url_script_path = os.path.join(project_root, 'ai_agent', 'qa_url_model.py')
+        # Secure the filename and save the file
+        filename = secure_filename(file.filename)
+        timestamp = str(int(time.time()))
+        saved_filename = f"{timestamp}_{filename}"
+        file_path = os.path.join(upload_dir, saved_filename)
 
         try:
-            # Execute the QA script with the URL and question as arguments
-            result = subprocess.run(
-                ['python', qa_url_script_path, url, question],
-                capture_output=True,
-                text=True,
-                check=False,
-                encoding='utf-8'
-            )
+            file.save(file_path)
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "message": f"Failed to save file: {str(e)}"
+            }), 500
+    
+        try:
+            from ai_agent.qa_model import QAModel
+            
+            # Initialize the QA model
+            qa_model = QAModel()
 
-            # Process the output
-            output = result.stdout.strip()
-
-            # If there's an error, check stderr
-            if not output and result.stderr:
+            # Process the document and store in vector db
+            result = qa_model.process_uploaded_file(file_path)
+            
+            if result is None:
+                # Clean up the uploaded file if processing fails
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except:
+                        pass
+                        
                 return jsonify({
                     "status": "error",
-                    "message": "Error processing question",
-                    "error": result.stderr
-                }), 500
-
+                    "message": "Document appears to be empty or unreadable"
+                }), 400
+                
             return jsonify({
                 "status": "success",
-                "answer": output
+                "message": "Document processed successfully and ready for questions",
+                "filename": saved_filename
             }), 200
 
         except Exception as e:
-            print(f"Error running QA model for URL: {str(e)}")
+            # Clean up the uploaded file if processing fails
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except:
+                    pass
+            
             return jsonify({
                 "status": "error",
-                "message": "Error processing question",
-                "error": str(e)
+                "message": f"Error processing document: {str(e)}"
             }), 500
 
-    else:
-        return jsonify({"status": "error", "message": "No PDF or URL provided"}), 400
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}"
+        }), 500
+
+@app.route('/check-documents', methods=['GET'])
+def check_documents():
+    try:
+        from ai_agent.qa_model import QAModel
+        
+        # Initialize the QA model and check for documents
+        qa_model = QAModel()
+        has_docs = qa_model.has_documents()
+        
+        return jsonify({
+            "status": "success",
+            "has_documents": has_docs
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error checking documents: {str(e)}"
+        }), 500
+
+@app.route('/api/questions/ask', methods=['POST'])
+def ask_question():
+    data = request.json
+    question = data.get('question')
+
+    if not question:
+        return jsonify({"status": "error", "message": "No question provided"}), 400
+
+    try:
+        from ai_agent.qa_model import QAModel
+        
+        # Initialize the QA model
+        qa_model = QAModel()
+        
+        # Check if documents exist
+        if not qa_model.has_documents():
+            return jsonify({
+                "status": "error",
+                "message": "No documents found. Please upload PDF documents first."
+            }), 400
+            
+        # Get answer from the model
+        answer = qa_model.answer_question(question)
+        
+        return jsonify({
+            "status": "success",
+            "answer": answer
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Error processing question",
+            "error": str(e)
+        }), 500
 
 
 @app.route('/recommend-papers', methods=['POST'])
@@ -293,6 +365,81 @@ def get_recommendations():
             "error": str(e)
         }), 500
 
+@app.route('/api/upload-pdf-report', methods=['POST', 'OPTIONS'])
+def upload_pdf_report():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+        
+    try:
+        if 'pdf' not in request.files:
+            return jsonify({"status": "error", "message": "No file part"}), 400
+
+        file = request.files['pdf']
+        filename = request.form.get('filename', '')
+        num_pages = request.form.get('numPages', '3')
+        
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "No selected file"}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({"status": "error", "message": "File must be a PDF"}), 400
+
+        try:
+            num_pages = int(num_pages)
+            if num_pages < 1 or num_pages > 10:
+                num_pages = 3
+        except ValueError:
+            num_pages = 3
+
+        # Create a unique filename
+        timestamp = str(int(time.time()))
+        saved_filename = f"{timestamp}_{secure_filename(filename or file.filename)}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
+
+        # Save the file
+        file.save(file_path)
+        print(f"File saved to: {file_path}")  # Debug log
+
+        # Generate the report
+        try:
+            from ai_agent.report_generator import ReportGenerator
+            
+            # Initialize the summarizer
+            reportGenerator = ReportGenerator()
+
+            # Process the document and get summary
+            report = ""
+            for chunk in reportGenerator.generate_report(file_path):
+                report += chunk
+
+            return jsonify({
+                "status": "success",
+                "message": "File uploaded and report generated",
+                "filename": saved_filename,
+                "path": file_path,
+                "report": report
+            }), 200
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return jsonify({
+                "status": "success",
+                "message": "File uploaded but error occurred during report generation",
+                "filename": saved_filename,
+                "path": file_path,
+                "error": str(e)
+            }), 200
+
+    except Exception as e:
+        print(f"Error during upload: {str(e)}")
+        return jsonify({
+            "status": "error", 
+            "message": f"Error during upload: {str(e)}"
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

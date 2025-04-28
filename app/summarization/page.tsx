@@ -1,19 +1,20 @@
 "use client";
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 export default function SummarizationPage() {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [summary, setSummary] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
@@ -36,7 +37,7 @@ export default function SummarizationPage() {
       formData.append('file', selectedFile);
 
       try {
-        const response = await fetch('http://localhost:5000/upload-pdf', {
+        const response = await fetch('http://localhost:5000/upload-pdf-sum', {
           method: 'POST',
           body: formData,
         });
@@ -105,16 +106,16 @@ export default function SummarizationPage() {
           <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
             <h3 className="text-lg font-semibold text-purple-400 mb-2">📝 Summarization</h3>
             <p className="text-sm text-gray-400 mb-3">
-              Enter a URL or upload a PDF to generate a summary.
+              Upload a PDF to generate a summary.
             </p>
-            <input
+            {/* <input
               type="text"
               className="w-full p-3 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md placeholder-gray-400 mb-2"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter URL here..."
-            />
-            <p className="text-center text-gray-500 my-2">or</p>
+            /> */}
+            {/* <p className="text-center text-gray-500 my-2">or</p> */}
             <input
               type="file"
               accept=".pdf"
@@ -141,10 +142,37 @@ export default function SummarizationPage() {
           {/* Result Section */}
           <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
             <h3 className="text-lg font-semibold text-purple-300 mb-4">📜 Result</h3>
-            <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 whitespace-pre-wrap">
-              {isProcessing
-                ? 'Processing your document, please wait...'
-                : summary || 'Your summarized content will appear here.'}
+            <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 overflow-y-auto max-h-[500px]">
+              {isProcessing ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                </div>
+              ) : summary ? (
+                <div className="prose prose-invert max-w-none dark:prose-invert">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ node, ...props }) => <h1 className="text-3xl font-bold text-purple-400 mb-6 mt-0" {...props} />,
+                      h2: ({ node, ...props }) => <h2 className="text-2xl font-bold text-purple-400 mb-4 mt-8" {...props} />,
+                      h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-purple-400 mb-3 mt-6" {...props} />,
+                      p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-300" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2 text-gray-300" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-gray-300" {...props} />,
+                      li: ({ node, ...props }) => <li className="mb-2" {...props} />,
+                      strong: ({ node, ...props }) => <strong className="font-bold text-purple-300" {...props} />,
+                      em: ({ node, ...props }) => <em className="italic" {...props} />,
+                      blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-purple-500 pl-4 italic my-4 text-gray-400" {...props} />,
+                      code: ({ node, ...props }) => <code className="bg-[#3a3a50] px-2 py-1 rounded text-sm font-mono" {...props} />,
+                      pre: ({ node, ...props }) => <pre className="bg-[#3a3a50] p-4 rounded-lg overflow-x-auto my-4 font-mono" {...props} />,
+                    }}
+                  >
+                    {summary}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center">
+                  Your summarized content will appear here.
+                </div>
+              )}
             </div>
           </div>
         </div>

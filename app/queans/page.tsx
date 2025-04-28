@@ -1,64 +1,137 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, History, CreditCard, Settings, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+const API_BASE_URL = 'http://localhost:5000';
 
 export default function QuestionAnsweringPage() {
   const router = useRouter();
-  const [url, setUrl] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [isDocumentReady, setIsDocumentReady] = useState(false);
+  const [checkingDocuments, setCheckingDocuments] = useState(true);
 
-  const handleFileUpload = (e) => {
-    const selectedFile = e.target.files[0];
+  // Check for existing documents when the page loads
+  useEffect(() => {
+    const checkDocuments = async () => {
+      try {
+        setCheckingDocuments(true);
+        const response = await fetch(`${API_BASE_URL}/check-documents`);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'success' && data.has_documents) {
+            setIsDocumentReady(true);
+            setUploadStatus('success');
+            setUploadMessage('Documents are available and ready for questions.');
+          } else {
+            setIsDocumentReady(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking documents:', error);
+      } finally {
+        setCheckingDocuments(false);
+      }
+    };
+
+    checkDocuments();
+  }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Check file type
+      if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
+        setUploadStatus('error');
+        setUploadMessage('Only PDF files are supported.');
+        return;
+      }
+
+      // Check file size (10MB max)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setUploadStatus('error');
+        setUploadMessage('File is too large. Maximum size is 10MB.');
+        return;
+      }
+
       setFile(selectedFile);
       setUploadedFileName(selectedFile.name);
-      setUrl('');
-    }
-  };
+      setUploadStatus('uploading');
+      setUploadMessage('Processing document...');
+      setIsDocumentReady(false);
 
-  const handleUrlChange = (e) => {
-    setUrl(e.target.value);
-    setFile(null);
-    setUploadedFileName('');
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/upload-pdf-qa`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          setUploadStatus('success');
+          setUploadMessage('Document processed successfully! You can now ask questions.');
+          setIsDocumentReady(true);
+        } else {
+          setUploadStatus('error');
+          setUploadMessage(data.message || 'Failed to process document');
+          setIsDocumentReady(false);
+        }
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        setUploadStatus('error');
+        setUploadMessage('Failed to process document. Server may be unavailable.');
+        setIsDocumentReady(false);
+      }
+    }
   };
 
   const handleAskQuestion = async () => {
-    if (!question) {
-      alert('❌ Please enter a question.');
+    if (!question.trim()) {
+      setUploadStatus('error');
+      setUploadMessage('Please enter a question.');
       return;
     }
 
-    if (!file && !url) {
-      alert('❌ Please provide either a URL or a PDF file.');
+    if (!isDocumentReady) {
+      setUploadStatus('error');
+      setUploadMessage('Please upload and process a document first.');
       return;
     }
 
     setLoading(true);
     setAnswer('');
 
-    const formData = new FormData();
-    formData.append('question', question);
-    if (file) {
-      formData.append('pdf', file);
-    } else {
-      formData.append('url', url);
-    }
-
     try {
-      const response = await fetch('http://localhost:5000/api/questions/ask', {
+      const response = await fetch(`${API_BASE_URL}/api/questions/ask`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
       });
 
       const data = await response.json();
-      setAnswer(data.status === 'success' ? data.answer || 'No answer received.' : `Error: ${data.message}`);
-    } catch (error) {
-      setAnswer(`❌ Failed to fetch answer: ${error.message}`);
+
+      if (response.ok && data.status === 'success') {
+        setAnswer(data.answer);
+      } else {
+        setAnswer(`Error: ${data.message || 'Failed to get answer'}`);
+      }
+    } catch (error: any) {
+      console.error('Question error:', error);
+      setAnswer(`❌ Failed to fetch answer. Please check your connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -72,7 +145,7 @@ export default function QuestionAnsweringPage() {
         <nav className="space-y-3">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
           <NavItem icon={<History size={20} />} text="History" />
-          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")}/>
+          <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
       </aside>
@@ -99,68 +172,84 @@ export default function QuestionAnsweringPage() {
         </button>
 
         {/* QA Box */}
-        <div className="bg-[#1e1e2f] p-6 rounded-lg shadow-md border border-[#2e2e40]">
+        <div className="bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40]">
           <h3 className="text-xl font-semibold text-purple-400 mb-2">Question Answering</h3>
           <p className="text-sm text-gray-400 mb-4">
-            Enter a URL or upload a PDF file, then ask a question about its content.
+            Upload a PDF file, then ask a question about its content.
           </p>
 
-          {/* Inputs */}
-          <div className="space-y-4">
-            {/* URL Input */}
-            <div>
-              <label className="block text-sm mb-1 text-gray-300">Enter URL:</label>
-              <input
-                type="text"
-                value={url}
-                onChange={handleUrlChange}
-                placeholder="https://example.com/article"
-                disabled={file !== null}
-                className="w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white placeholder-gray-400"
-              />
+          {checkingDocuments ? (
+            <div className="text-center py-4">
+              <div className="animate-pulse text-purple-400">Checking for available documents...</div>
             </div>
-
-            {/* File Upload */}
-            <div>
-              <label className="block text-sm mb-1 text-gray-300">Or Upload PDF:</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  id="pdf-upload"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={url !== ''}
-                />
-                <label htmlFor="pdf-upload" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded cursor-pointer">
-                  Choose File
-                </label>
-                <span className="text-sm text-gray-400">
-                  {uploadedFileName || "No file chosen"}
-                </span>
+          ) : (
+            /* Inputs */
+            <div className="space-y-4">
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-300">Upload PDF:</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    id="pdf-upload"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={uploadStatus === 'uploading'}
+                  />
+                  <label
+                    htmlFor="pdf-upload"
+                    className={`px-4 py-2 rounded cursor-pointer ${uploadStatus === 'uploading'
+                        ? 'bg-gray-600 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                      } text-white transition`}
+                  >
+                    {uploadStatus === 'uploading' ? 'Uploading...' : 'Choose File'}
+                  </label>
+                  <span className="text-sm text-gray-400 truncate max-w-xs">
+                    {uploadedFileName || "No file chosen"}
+                  </span>
+                </div>
+                {uploadStatus !== 'idle' && (
+                  <div className={`mt-2 text-sm ${uploadStatus === 'success' ? 'text-green-400' :
+                      uploadStatus === 'error' ? 'text-red-400' :
+                        'text-yellow-400'
+                    }`}>
+                    {uploadMessage}
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Question Input */}
-            <div>
-              <label className="block text-sm mb-1 text-gray-300">Your Question:</label>
-              <textarea
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask your question about the content..."
-                className="w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white min-h-[80px] placeholder-gray-400"
-              />
-            </div>
+              {/* Question Input */}
+              <div>
+                <label className="block text-sm mb-1 text-gray-300">Your Question:</label>
+                <textarea
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask your question..."
+                  className={`w-full p-3 bg-[#2e2e40] border border-[#3a3a50] rounded-md text-white min-h-[80px] placeholder-gray-400 transition ${!isDocumentReady ? 'opacity-75' : ''}`}
+                  disabled={!isDocumentReady}
+                />
+                {!isDocumentReady && uploadStatus !== 'uploading' && uploadStatus !== 'success' && (
+                  <p className="text-xs text-yellow-400 mt-1">
+                    Please upload a document first
+                  </p>
+                )}
+              </div>
 
-            {/* Ask Button */}
-            <button
-              onClick={handleAskQuestion}
-              disabled={loading || (!url && !file) || !question}
-              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-md font-semibold hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? '⏳ Processing...' : 'Ask Question'}
-            </button>
-          </div>
+              {/* Ask Button */}
+              <button
+                onClick={handleAskQuestion}
+                disabled={loading || !isDocumentReady || !question.trim()}
+                className={`w-full py-3 rounded-md font-semibold transition ${loading || !isDocumentReady || !question.trim()
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90'
+                  }`}
+              >
+                {loading ? '⏳ Processing...' : 'Ask Question'}
+              </button>
+            </div>
+          )}
 
           {/* Answer Output */}
           <div className="mt-6">
@@ -169,7 +258,25 @@ export default function QuestionAnsweringPage() {
               {loading ? (
                 <div className="animate-pulse text-purple-400">⏳ Processing your question...</div>
               ) : answer ? (
-                <pre className="whitespace-pre-wrap">{answer}</pre>
+                <div className="prose prose-invert max-w-none">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 text-purple-300" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 text-purple-300" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-4 mb-2" {...props} />,
+                      p: ({node, ...props}) => <p className="text-gray-300 mb-3 leading-relaxed" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4 text-gray-300" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4 text-gray-300" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-2" {...props} />,
+                      code: ({node, ...props}) => <code className="bg-[#3a3a50] px-2 py-1 rounded text-sm" {...props} />,
+                      pre: ({node, ...props}) => <pre className="bg-[#3a3a50] p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-500 pl-4 italic my-4" {...props} />,
+                      a: ({node, ...props}) => <a className="text-purple-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                    }}
+                  >
+                    {answer}
+                  </ReactMarkdown>
+                </div>
               ) : (
                 <div className="text-gray-500 italic">Your answer will appear here.</div>
               )}
@@ -181,7 +288,6 @@ export default function QuestionAnsweringPage() {
   );
 }
 
-{/* NavItem sidebar */}
 function NavItem({ icon, text, onClick }: { icon: React.ReactNode; text: string; onClick?: () => void }) {
   return (
     <div
