@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ai_agent.summarizer import DocumentSummarizer
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
 import hashlib
 
@@ -14,7 +14,7 @@ from ai_agent.recommedPapers import SearchPapers
 from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
-from database.query_auth import create_user, check_user_exists, verify_user
+from database.query_auth import create_user, check_user_exists, verify_user, update_profile_path, update_password    
 
 # Load environment variables safely
 load_dotenv()
@@ -101,10 +101,104 @@ def login():
     result = verify_user(identifier, password_hash)
 
     if result.get("status") == "success":
+        # Get the user's profile image URL
+        user_id = result.get('user', {}).get('user_id')
+        if user_id:
+            # Get the project root directory
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            profile_dir = os.path.join(project_root, 'profile_dir', user_id)
+
+            # Check if user has a profile image
+            if os.path.exists(profile_dir):
+                files = [f for f in os.listdir(profile_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+                if files:
+                    # Sort by timestamp (newest first)
+                    files.sort(reverse=True)
+                    # Add profile image URL to the response
+                    result['user']['profileImage'] = f'/get-profile-image/{user_id}'
+
         return jsonify(result), 200
     else:
         return jsonify(result), 401
+    
+@app.route('/upload-profile-image', methods=['POST'])
+def upload_profile_image():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"status": "error", "message": "No file part"}), 400
 
+        file = request.files['file']
+        user_id = request.form.get('user_id')
+
+        if not user_id:
+            return jsonify({"status": "error", "message": "User ID is required"}), 400
+
+        if file.filename == '':
+            return jsonify({"status": "error", "message": "No selected file"}), 400
+
+        if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            return jsonify({"status": "error", "message": "Invalid file type. Only images are allowed"}), 400
+
+        # Get the project root directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        
+        # Create user-specific profile directory
+        profile_dir = os.path.join(project_root, 'profile_dir', user_id)
+        os.makedirs(profile_dir, exist_ok=True)
+
+        # Generate a unique filename
+        filename = secure_filename(file.filename)
+        timestamp = str(int(time.time()))
+        saved_filename = f"{timestamp}_{filename}"
+        file_path = os.path.join(profile_dir, saved_filename)
+
+        # Save the file
+        file.save(file_path)
+
+        # Update the profile path in the database
+        result = update_profile_path(user_id, file_path)
+
+        if result.get("status") == "success":
+            return jsonify({
+                "status": "success",
+                "message": "Profile image uploaded successfully",
+                "profile_path": file_path
+            }), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error uploading profile image: {str(e)}"
+        }), 500
+
+@app.route('/get-profile-image/<user_id>', methods=['GET'])
+def get_profile_image(user_id):
+    try:
+        # Get the project root directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        profile_dir = os.path.join(project_root, 'profile_dir', user_id)
+
+        # Get the most recent image file in the user's profile directory
+        if os.path.exists(profile_dir):
+            files = [f for f in os.listdir(profile_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+            if files:
+                # Sort by timestamp (newest first)
+                files.sort(reverse=True)
+                latest_file = files[0]
+                return send_from_directory(profile_dir, latest_file)
+        
+        return jsonify({"status": "error", "message": "No profile image found"}), 404
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error retrieving profile image: {str(e)}"
+        }), 500
 
 @app.route('/upload-pdf-sum', methods=['POST'])
 def upload_pdf_sum():
@@ -439,6 +533,66 @@ def upload_pdf_report():
         return jsonify({
             "status": "error", 
             "message": f"Error during upload: {str(e)}"
+        }), 500
+
+@app.route('/remove-profile-image/<user_id>', methods=['DELETE'])
+def remove_profile_image(user_id):
+    try:
+        # Get the project root directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        profile_dir = os.path.join(project_root, 'profile_dir', user_id)
+
+        # Remove all files in the user's profile directory
+        if os.path.exists(profile_dir):
+            for file in os.listdir(profile_dir):
+                file_path = os.path.join(profile_dir, file)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
+
+        # Update the profile path in the database to null
+        result = update_profile_path(user_id, None)
+
+        if result.get("status") == "success":
+            return jsonify({
+                "status": "success",
+                "message": "Profile image removed successfully"
+            }), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error removing profile image: {str(e)}"
+        }), 500
+
+@app.route('/change-password', methods=['POST'])
+def change_password():
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        if not all([user_id, current_password, new_password]):
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
+        # Call the update_password function
+        result = update_password(user_id, current_password, new_password)
+        
+        if result.get("status") == "success":
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Error changing password: {str(e)}"
         }), 500
 
 if __name__ == '__main__':

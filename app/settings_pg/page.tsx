@@ -35,6 +35,8 @@ export default function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [passwordError, setPasswordError] = useState("");
+  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,8 +51,25 @@ export default function SettingsPage() {
         email: parsedUser.email || "",
         profileImage: parsedUser.profileImage || null,
       });
-      if (parsedUser.profileImage) {
-        setProfileImage(parsedUser.profileImage);
+      
+      // If user has a profile image, fetch it from the server
+      if (parsedUser.user_id) {
+        fetch(`http://localhost:5000/get-profile-image/${parsedUser.user_id}`)
+          .then(response => {
+            if (response.ok) {
+              const imageUrl = `http://localhost:5000/get-profile-image/${parsedUser.user_id}`;
+              setProfileImage(imageUrl);
+              // Update localStorage with the correct image URL
+              const updatedUser = {
+                ...parsedUser,
+                profileImage: imageUrl,
+              };
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching profile image:', error);
+          });
       }
     }
     setIsLoading(false);
@@ -72,16 +91,34 @@ export default function SettingsPage() {
 
     setIsUploading(true);
     try {
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('user_id', JSON.parse(localStorage.getItem('user') || '{}').user_id);
 
-      // Update user data in localStorage
-      const updatedUser = {
-        ...JSON.parse(localStorage.getItem('user') || '{}'),
-        profileImage: imageUrl,
-      };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      const response = await fetch('http://localhost:5000/upload-profile-image', {
+        method: 'POST',
+        body: formData,
+      });
 
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        // Get the user data from localStorage
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Update the profile image URL
+        const imageUrl = `http://localhost:5000/get-profile-image/${user.user_id}`;
+        setProfileImage(imageUrl);
+
+        // Update user data in localStorage
+        const updatedUser = {
+          ...user,
+          profileImage: imageUrl,
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      } else {
+        throw new Error(result.message || 'Failed to upload image');
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Error uploading image. Please try again.');
@@ -90,17 +127,34 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRemoveImage = () => {
-    setProfileImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleRemoveImage = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.user_id) {
+        // Call backend to remove the image
+        const response = await fetch(`http://localhost:5000/remove-profile-image/${user.user_id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          setProfileImage(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          // Update user data in localStorage
+          const updatedUser = {
+            ...user,
+            profileImage: null,
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        } else {
+          throw new Error('Failed to remove image');
+        }
+      }
+    } catch (error) {
+      console.error('Error removing image:', error);
+      alert('Error removing image. Please try again.');
     }
-    // Update user data in localStorage
-    const updatedUser = {
-      ...JSON.parse(localStorage.getItem('user') || '{}'),
-      profileImage: null,
-    };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   const handleProfileUpdate = async () => {
@@ -118,44 +172,76 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value
+      };
+      // Validate after state update
+      if (name === 'newPassword' || name === 'confirmPassword') {
+        if (newData.newPassword !== newData.confirmPassword) {
+          setPasswordError("New passwords do not match");
+        } else if (newData.newPassword.length < 8) {
+          setPasswordError("Password must be at least 8 characters long");
+        } else {
+          setPasswordError("");
+        }
+      }
+      return newData;
+    });
+  };
+
   const handlePasswordUpdate = async () => {
+    // Validate passwords before proceeding
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match');
+      setPasswordError("New passwords do not match");
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters long");
+      return;
+    }
+    if (!passwordData.currentPassword) {
+      setPasswordError("Please enter your current password");
       return;
     }
 
+    setIsPasswordUpdating(true);
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      const response = await fetch('http://localhost:5000/api/update-password', {
+      const response = await fetch('http://localhost:5000/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-          user: user
+          user_id: user.user_id,
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword
         }),
       });
 
       const data = await response.json();
       if (data.status === 'success') {
         alert('Password updated successfully');
-        // Update localStorage with new user data
-        localStorage.setItem('user', JSON.stringify(data.user));
         // Clear password fields
         setPasswordData({
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
         });
+        setPasswordError('');
       } else {
         alert(data.message || 'Failed to update password');
       }
     } catch (error) {
       console.error('Error updating password:', error);
       alert('Error updating password. Please try again.');
+    } finally {
+      setIsPasswordUpdating(false);
     }
   };
 
@@ -329,40 +415,47 @@ export default function SettingsPage() {
       content: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium ">Current Password</label>
+            <label className="block text-sm font-medium">Current Password</label>
             <input
               type="password"
+              name="currentPassword"
               value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+              onChange={handlePasswordChange}
               className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter current password"
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium ">New Password</label>
+            <label className="block text-sm font-medium">New Password</label>
             <input
               type="password"
+              name="newPassword"
               value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              onChange={handlePasswordChange}
               className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter new password"
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-medium ">Confirm New Password</label>
+            <label className="block text-sm font-medium">Confirm New Password</label>
             <input
               type="password"
+              name="confirmPassword"
               value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              onChange={handlePasswordChange}
               className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Confirm new password"
             />
+            {passwordError && (
+              <p className="text-red-500 text-sm">{passwordError}</p>
+            )}
           </div>
           <button 
             onClick={handlePasswordUpdate}
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            disabled={isPasswordUpdating || !!passwordError}
+            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Change Password
+            {isPasswordUpdating ? 'Updating...' : 'Change Password'}
           </button>
         </div>
       ),

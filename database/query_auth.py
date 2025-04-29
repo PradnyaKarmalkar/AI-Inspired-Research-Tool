@@ -3,6 +3,7 @@ import uuid
 import mysql.connector
 from dotenv import load_dotenv
 import re
+import hashlib
 
 
 def get_db_connection():
@@ -165,3 +166,118 @@ def verify_user(identifier, password_hash):
 
     except mysql.connector.Error as err:
         return {"status": "error", "message": f"Database error: {str(err)}"}
+    
+def update_profile_path(user_id, profile_path):
+    """
+    Update the profile path for a user.
+
+    Args:
+        user_id (str): The ID of the user to update
+        profile_path (str): The new profile path to set
+
+    Returns:
+        dict: Status message or error message
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+        UPDATE users
+        SET profile_path = %s
+        WHERE user_id = %s
+        """ 
+        cursor.execute(query, (profile_path, user_id))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+        
+        return {"status": "success", "message": "Profile image updated successfully"}
+    
+    except mysql.connector.Error as err:
+        return {"status": "error", "message": f"Database error: {str(err)}"}  
+    
+def get_profile_path(user_id):
+    """
+    Get the profile path for a user.
+
+    Args:
+        user_id (str): The ID of the user to get the profile path for       
+
+    Returns:
+        dict: Profile path or error message
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+        SELECT profile_path
+        FROM users
+        WHERE user_id = %s
+        """
+        cursor.execute(query, (user_id,))
+        profile_path = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return {"status": "success", "profile_path": profile_path}          
+    
+    except mysql.connector.Error as err:
+        return {"status": "error", "message": f"Database error: {str(err)}"}            
+
+def update_password(user_id, current_password, new_password):
+    """
+    Update user's password after verifying current password.
+
+    Args:
+        user_id (str): The ID of the user
+        current_password (str): User's current password
+        new_password (str): User's new password
+
+    Returns:
+        dict: Status message or error message
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Hash the current password
+        current_password_hash = hashlib.sha256(current_password.encode()).hexdigest()
+
+        # First verify the current password
+        query = """
+        SELECT hash_passwd
+        FROM users
+        WHERE user_id = %s
+        """
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+
+        if not result:
+            return {"status": "error", "message": "User not found"}
+
+        if result['hash_passwd'] != current_password_hash:
+            return {"status": "error", "message": "Current password is incorrect"}
+
+        # Hash the new password
+        new_password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+
+        # Update the password
+        update_query = """
+        UPDATE users
+        SET hash_passwd = %s
+        WHERE user_id = %s
+        """
+        cursor.execute(update_query, (new_password_hash, user_id))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+        
+        return {"status": "success", "message": "Password updated successfully"}
+    
+    except mysql.connector.Error as err:
+        return {"status": "error", "message": f"Database error: {str(err)}"}            

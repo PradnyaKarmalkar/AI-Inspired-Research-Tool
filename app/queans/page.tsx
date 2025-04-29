@@ -19,31 +19,31 @@ export default function QuestionAnsweringPage() {
   const [checkingDocuments, setCheckingDocuments] = useState(true);
 
   // Check for existing documents when the page loads
-  useEffect(() => {
-    const checkDocuments = async () => {
-      try {
-        setCheckingDocuments(true);
-        const response = await fetch(`${API_BASE_URL}/check-documents`);
+  // useEffect(() => {
+  //   const checkDocuments = async () => {
+  //     try {
+  //       setCheckingDocuments(true);
+  //       const response = await fetch(`${API_BASE_URL}/check-documents`);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'success' && data.has_documents) {
-            setIsDocumentReady(true);
-            setUploadStatus('success');
-            setUploadMessage('Documents are available and ready for questions.');
-          } else {
-            setIsDocumentReady(false);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking documents:', error);
-      } finally {
-        setCheckingDocuments(false);
-      }
-    };
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         if (data.status === 'success' && data.has_documents) {
+  //           setIsDocumentReady(true);
+  //           setUploadStatus('success');
+  //           setUploadMessage('Documents are available and ready for questions.');
+  //         } else {
+  //           setIsDocumentReady(false);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking documents:', error);
+  //     } finally {
+  //       setCheckingDocuments(false);
+  //     }
+  //   };
 
-    checkDocuments();
-  }, []);
+  //   checkDocuments();
+  // }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -178,12 +178,12 @@ export default function QuestionAnsweringPage() {
             Upload a PDF file, then ask a question about its content.
           </p>
 
-          {checkingDocuments ? (
-            <div className="text-center py-4">
-              <div className="animate-pulse text-purple-400">Checking for available documents...</div>
-            </div>
-          ) : (
-            /* Inputs */
+          {/* {checkingDocuments ? (
+            // <div className="text-center py-4">
+            //   <div className="animate-pulse text-purple-400">Checking for available documents...</div>
+            // </div>
+            ): ( */}
+             {/* Inputs */}
             <div className="space-y-4">
               {/* File Upload */}
               <div>
@@ -249,7 +249,7 @@ export default function QuestionAnsweringPage() {
                 {loading ? '⏳ Processing...' : 'Ask Question'}
               </button>
             </div>
-          )}
+          {/* )} */}
 
           {/* Answer Output */}
           <div className="mt-6">

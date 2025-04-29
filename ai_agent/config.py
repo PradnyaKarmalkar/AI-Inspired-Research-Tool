@@ -4,7 +4,8 @@ CHUNK_OVERLAP=150
 REPORT_CHUNK_SIZE=2000
 REPORT_CHUNK_OVERLAP=200
 
-SUMMARIZER_MODEL="gemini-2.0-flash"
+# SUMMARIZER_MODEL="gemini-2.0-flash"
+SUMMARIZER_MODEL="gemini-2.5-pro-exp-03-25"
 EMBED_MODEL="models/embedding-001"
 
 # Search Papers params

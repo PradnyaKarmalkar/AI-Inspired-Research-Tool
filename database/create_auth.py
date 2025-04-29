@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) UNIQUE NOT NULL,
     hash_passwd TEXT NOT NULL,
     f_name VARCHAR(50),
-    l_name VARCHAR(50)
+    l_name VARCHAR(50),
+    profile_path TEXT
 )
 """)
 

@@ -23,6 +23,9 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.status === "success") {
+        if (data.user.profileImage) {
+          data.user.profileImage = `http://localhost:5000${data.user.profileImage}`;
+        }
         localStorage.setItem("user", JSON.stringify(data.user));
         router.push("/home");
       } else {

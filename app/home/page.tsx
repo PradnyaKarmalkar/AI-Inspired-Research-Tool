@@ -16,7 +16,11 @@ export default function HomePage() {
     if (user) {
       const parsedUser = JSON.parse(user);
       if (parsedUser.profileImage) {
-        setProfileImage(parsedUser.profileImage);
+        // Ensure the profile image URL is complete
+        const imageUrl = parsedUser.profileImage.startsWith('http') 
+          ? parsedUser.profileImage 
+          : `http://localhost:5000${parsedUser.profileImage}`;
+        setProfileImage(imageUrl);
       }
     }
   }, []);
