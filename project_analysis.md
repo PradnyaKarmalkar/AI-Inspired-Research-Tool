@@ -250,6 +250,305 @@ The application is organized into several key components:
    - File storage for uploaded documents
    - Vector indices for semantic search
 
+## 5. System Diagrams
+
+### Proposed System Diagram
+
+```mermaid
+flowchart TD
+    subgraph "Client Side"
+        A[User] --> B[Web Interface]
+        B <--> C[Next.js Frontend]
+    end
+    
+    subgraph "Server Side"
+        C <--> D[Flask API]
+        D <--> E[Document Processor]
+        D <--> F[QA Module]
+        D <--> G[Auth Service]
+        E <--> H[Vector Database]
+        F <--> I[AI Models]
+        G <--> J[User Database]
+    end
+    
+    subgraph "External Services"
+        I <--> K[Hugging Face API]
+    end
+    
+    H --- L[(Document Storage)]
+    J --- M[(User Profiles)]
+```
+
+### Block Diagram
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        A1[Pages] --- A2[Components]
+        A2 --- A3[Contexts]
+        A1 --- A4[API Client]
+    end
+    
+    subgraph "Backend Layer"
+        B1[API Server] --- B2[Document Processor]
+        B1 --- B3[QA Engine]
+        B1 --- B4[Auth Service]
+        B2 --- B5[Vector Operations]
+    end
+    
+    subgraph "Data Layer"
+        C1[(User Database)] --- C2[(Document Storage)]
+        C2 --- C3[(Vector Embeddings)]
+    end
+    
+    subgraph "AI Services"
+        D1[LLM Integration] --- D2[Embedding Models]
+    end
+    
+    A4 <--> B1
+    B2 <--> C2
+    B3 <--> D1
+    B4 <--> C1
+    B5 <--> C3
+    D2 <--> C3
+```
+
+### Component Diagram
+
+```mermaid
+graph TB
+    subgraph "Frontend Components"
+        F1[Layout] --- F2[Navigation]
+        F1 --- F3[Document Upload]
+        F1 --- F4[QA Interface]
+        F1 --- F5[Summarization]
+        F1 --- F6[Report Generator]
+        F1 --- F7[User Settings]
+        F1 --- F8[History Viewer]
+    end
+    
+    subgraph "Backend Components"
+        B1[Flask App] --- B2[Document Processor]
+        B1 --- B3[QA Model]
+        B1 --- B4[Authentication]
+        B1 --- B5[File Management]
+        B2 --- B6[Text Splitter]
+        B2 --- B7[Vector Indexer]
+        B3 --- B8[Context Retriever]
+        B3 --- B9[Answer Generator]
+    end
+    
+    F3 --> B5
+    F4 --> B3
+    F5 --> B2
+    F6 --> B3
+    F7 --> B4
+    F8 --> B1
+```
+
+### Use Case Diagram
+
+```mermaid
+graph TD
+    subgraph "Actors"
+        A1((User))
+        A2((Admin))
+    end
+    
+    subgraph "Use Cases"
+        UC1[Register Account]
+        UC2[Login to System]
+        UC3[Upload Document]
+        UC4[Ask Questions]
+        UC5[Generate Summary]
+        UC6[Create Report]
+        UC7[View History]
+        UC8[Update Profile]
+        UC9[Manage Users]
+        UC10[System Monitoring]
+    end
+    
+    A1 --> UC1
+    A1 --> UC2
+    A1 --> UC3
+    A1 --> UC4
+    A1 --> UC5
+    A1 --> UC6
+    A1 --> UC7
+    A1 --> UC8
+    
+    A2 --> UC2
+    A2 --> UC9
+    A2 --> UC10
+```
+
+### Data Flow Diagram
+
+```mermaid
+flowchart TD
+    U[User] -->|1. Uploads Document| F[Frontend]
+    F -->|2. Send Document| B[Backend API]
+    B -->|3. Process Document| DP[Document Processor]
+    DP -->|4. Extract Text| DP
+    DP -->|5. Split Text| DP
+    DP -->|6. Generate Embeddings| EM[Embedding Model]
+    EM -->|7. Return Embeddings| DP
+    DP -->|8. Store Vectors| VDB[Vector Database]
+    
+    U -->|9. Ask Question| F
+    F -->|10. Send Question| B
+    B -->|11. Query for Context| VDB
+    VDB -->|12. Return Relevant Chunks| B
+    B -->|13. Generate Answer| LLM[Language Model]
+    LLM -->|14. Return Response| B
+    B -->|15. Return Answer| F
+    F -->|16. Display Answer| U
+```
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class DocumentProcessor {
+        -documents_dir: string
+        -vector_db_dir: string
+        -embeddings: HuggingFaceEmbeddings
+        +process_document(file_path: string): bool
+        +query_document(question: string): string
+    }
+    
+    class QAModel {
+        -document_processor: DocumentProcessor
+        -current_document: string
+        +process_document(file_path: string): dict
+        +get_answer(question: string): dict
+        -_get_gemma_response(prompt: string): string
+    }
+    
+    class FlaskAPI {
+        -app: Flask
+        -qa_model: QAModel
+        -UPLOAD_FOLDER: string
+        -PROFILE_PHOTOS_FOLDER: string
+        +upload_file(): Response
+        +ask_question(): Response
+        +upload_profile_photo(): Response
+        +get_profile_photo(filename): Response
+        +update_password(): Response
+        +get_history(): Response
+    }
+    
+    class UserAuth {
+        +create_user(username, email, password_hash): dict
+        +verify_user(identifier, password_hash): dict
+        +update_profile_path(user_id, profile_path): dict
+        +update_password(user_id, current_pwd, new_pwd): dict
+        +check_user_exists(username, email): dict
+        +get_profile_path(user_id): dict
+    }
+    
+    FlaskAPI --> QAModel
+    QAModel --> DocumentProcessor
+    FlaskAPI --> UserAuth
+```
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant API as Flask API
+    participant Auth as AuthService
+    participant DP as DocumentProcessor
+    participant QA as QAModel
+    participant LLM as Language Model
+    participant VDB as Vector Database
+    
+    User->>Frontend: Login (username, password)
+    Frontend->>API: POST /api/login
+    API->>Auth: verify_user(username, password)
+    Auth-->>API: user data / error
+    API-->>Frontend: Authentication response
+    Frontend-->>User: Login success/failure
+    
+    User->>Frontend: Upload Document
+    Frontend->>API: POST /api/upload
+    API->>QA: process_document(file)
+    QA->>DP: process_document(file)
+    DP->>DP: Extract & split text
+    DP->>VDB: Store vectors
+    VDB-->>DP: Confirm storage
+    DP-->>QA: Processing success
+    QA-->>API: Success response
+    API-->>Frontend: Upload status
+    Frontend-->>User: Document ready
+    
+    User->>Frontend: Ask Question
+    Frontend->>API: POST /api/ask
+    API->>QA: get_answer(question)
+    QA->>DP: query_document(question)
+    DP->>VDB: Search relevant context
+    VDB-->>DP: Return context chunks
+    DP-->>QA: Return context
+    QA->>LLM: Generate answer with context
+    LLM-->>QA: Return generated answer
+    QA-->>API: Return answer with source
+    API-->>Frontend: Return formatted answer
+    Frontend-->>User: Display answer
+```
+
+### Database Design Diagram
+
+```mermaid
+erDiagram
+    USERS {
+        string user_id PK
+        string username UK
+        string email UK
+        string hash_passwd
+        string f_name
+        string l_name
+        string profile_path
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    DOCUMENTS {
+        string doc_id PK
+        string user_id FK
+        string filename
+        string file_path
+        string title
+        string doc_type
+        integer page_count
+        timestamp uploaded_at
+    }
+    
+    HISTORY {
+        string history_id PK
+        string user_id FK
+        string doc_id FK
+        string action_type
+        string query
+        string response
+        timestamp created_at
+    }
+    
+    SETTINGS {
+        string setting_id PK
+        string user_id FK
+        string theme
+        boolean notifications
+        json preferences
+    }
+    
+    USERS ||--o{ DOCUMENTS : uploads
+    USERS ||--o{ HISTORY : creates
+    USERS ||--o{ SETTINGS : configures
+    DOCUMENTS ||--o{ HISTORY : referenced_in
+```
+
 ## 5. Conclusion
 
 The AI Document Processing Application demonstrates a sophisticated integration of modern web technologies with state-of-the-art AI capabilities. By combining Next.js and React on the frontend with Flask and LangChain on the backend, the application delivers a seamless user experience for complex document processing tasks.

@@ -12,7 +12,7 @@ class ReportGenerator:
     def __init__(self):
         self.chunk_size = config.REPORT_CHUNK_SIZE
         self.chunk_overlap = config.REPORT_CHUNK_OVERLAP
-        self.summarize_llm = config.SUMMARIZER_MODEL
+        self.report_llm = config.REPORT_MODEL
         self.embed_model = config.EMBED_MODEL
 
     def extractText(self, file_path):
@@ -47,7 +47,7 @@ class ReportGenerator:
 
         # In the summarizer method, change how you initialize the LLM
         llm = ChatGoogleGenerativeAI(
-            model=self.summarize_llm,
+            model=self.report_llm,
             temperature=0.1,
             top_p=max(0.7, min(0.9, 0.7 + (doc_length / 100) * 0.2)),
             max_output_tokens=min(4096, max(1024, doc_length * 100)),
@@ -67,17 +67,36 @@ class ReportGenerator:
 
             # Prepare prompt for direct streaming
             
-                # For longer documents, provide more context
-            prompt = f"""
-                Generate a report for the following document which has been divided into {len(result)} sections. 
-                Provide a comprehensive report that captures the main points and important details.
+            #     # For longer documents, provide more context
+            # prompt = f"""
+            #     Generate a report for the following document which has been divided into {len(result)} sections. 
+            #     Provide a comprehensive report that captures the main points and important details.
                 
-                Important:
-                - Do not hallucinate or add information not found in the document
-                - Create appropriate headings and subheadings based on the content
-                - Use bullets and new lines to make the report more readable.
-                - FORMAT YOUR RESPONSE IN MARKDOWN.
-                """
+            #     Important:
+            #     - Do not hallucinate or add information not found in the document
+            #     - Create appropriate headings and subheadings based on the content
+            #     - Use bullets and new lines to make the report more readable.
+            #     - FORMAT YOUR RESPONSE IN MARKDOWN.
+            #     """
+            
+            prompt = f"""
+                You are tasked with generating a **strictly Markdown-formatted** report based on a scientific research paper divided into {len(result)} sections.
+
+                Generate a detailed report that includes all important information from the document. Your report **must not hallucinate** or include anything that is not clearly stated in the paper.
+
+                Instructions:
+                - Use **Markdown** formatting only (headings, subheadings, bullet points, code blocks, etc.)
+                - Create meaningful and informative **headings and subheadings** based on the content.
+                - Use **bullets, numbered lists, and line breaks** for clarity and readability.
+                - Focus on preserving the **technical accuracy** and detail from the original paper.
+                - Include details such as objectives, methodology, data collection, model architecture, results, evaluation, and conclusions.
+                - Emphasize important **metrics, results**, and **SHAP/XAI interpretations** used in the study.
+                - Do not summarize generically—**structure your report to reflect the paper's structure** (e.g., Abstract, Introduction, Methods, Results, Discussion).
+
+                Remember:
+                - Do not add assumptions or external information.
+                - Format headings with `#`, `##`, `###` as appropriate for nesting."""
+
                 
             for i, doc in enumerate(result):
                 prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"

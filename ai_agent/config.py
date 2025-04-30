@@ -8,6 +8,7 @@ REPORT_CHUNK_OVERLAP=200
 SUMMARIZER_MODEL="gemini-2.5-pro-exp-03-25"
 EMBED_MODEL="models/embedding-001"
 
+REPORT_MODEL="gemini-2.5-pro-exp-03-25"
 # Search Papers params
 REGION = "us-en"  # Region code, e.g., 'us-en' for United States
 SAFESEARCH = "moderate"  # Safesearch setting: 'on', 'moderate', or 'off'
