@@ -10,6 +10,26 @@ export default function BillingPage() {
   const { isDarkMode } = useTheme();
   const [isYearly, setIsYearly] = useState(true);
 
+  // Handle success message from payment page
+  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // Check for success parameter in URL
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('success') === 'true') {
+      setShowSuccess(true);
+      // Remove the success parameter from URL
+      window.history.replaceState({}, document.title, '/billing');
+      
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   const plans = [
     {
       name: "Starter",
@@ -27,8 +47,8 @@ export default function BillingPage() {
     },
     {
       name: "Lite (Recommended)",
-      monthlyPrice: "$2",
-      yearlyPrice: "$16",
+      monthlyPrice: "$3",
+      yearlyPrice: "$35",
       features: [
         "2 Projects",
         "Client Billing",
@@ -42,7 +62,7 @@ export default function BillingPage() {
     {
       name: "Pro",
       monthlyPrice: "$5",
-      yearlyPrice: "$35",
+      yearlyPrice: "$60",
       features: [
         "2 Projects",
         "Client Billing",
@@ -54,6 +74,18 @@ export default function BillingPage() {
       cta: "Upgrade plan"
     }
   ];
+
+  // Function to handle plan selection
+  const handlePlanSelection = (plan: any) => {
+    // Free plan doesn't require payment
+    if (plan.name === "Starter") return;
+    
+    // For other plans, redirect to payment page with plan details
+    const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+    const billing = isYearly ? 'yearly' : 'monthly';
+    
+    router.push(`/payment?plan=${encodeURIComponent(plan.name)}&price=${encodeURIComponent(price)}&billing=${billing}`);
+  };
 
   return (
     <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
@@ -80,6 +112,14 @@ export default function BillingPage() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-y-auto">
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="mb-6 p-4 bg-green-500 text-white rounded-lg flex items-center justify-between">
+            <span>Payment successful! Your plan has been upgraded.</span>
+            <button onClick={() => setShowSuccess(false)} className="text-white hover:text-gray-200">✕</button>
+          </div>
+        )}
+        
         {/* Back to Home Button */}
         <div className="flex justify-end mb-6">
           <button
@@ -144,7 +184,10 @@ export default function BillingPage() {
                     ))}
                   </ul>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full py-2 px-4 font-semibold">
+                <button 
+                  onClick={() => handlePlanSelection(plan)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full py-2 px-4 font-semibold"
+                >
                   {plan.cta}
                 </button>
               </div>

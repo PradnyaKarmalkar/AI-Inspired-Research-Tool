@@ -1,7 +1,7 @@
 "use client";
 import { useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft, LogOut, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from "../context/ThemeContext";
 
@@ -14,6 +14,7 @@ export default function SummarizationPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,6 +66,19 @@ export default function SummarizationPage() {
     }
   };
 
+  const handleCopySummary = () => {
+    if (summary) {
+      navigator.clipboard.writeText(summary)
+        .then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+        });
+    }
+  };
+
   return (
     <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
@@ -72,7 +86,7 @@ export default function SummarizationPage() {
         <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
         <nav className="flex-grow space-y-4">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/home")} />
-          <NavItem icon={<History size={20} />} text="History" onClick={() => router.push("/history")} />
+          
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
@@ -107,7 +121,7 @@ export default function SummarizationPage() {
           <button
             onClick={() => router.push('/billing')}
             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
-            Join Us for $1/month
+            Join Us for $3/month
           </button>
         </div>
 
@@ -160,7 +174,21 @@ export default function SummarizationPage() {
 
           {/* Result Section */}
           <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
-            <h3 className="text-lg font-semibold text-purple-300 mb-4">📜 Result</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-purple-300">📜 Result</h3>
+              {summary && (
+                <button 
+                  onClick={handleCopySummary}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-[#2a2a40] hover:bg-[#3a3a50] transition-colors"
+                  title="Copy to clipboard"
+                >
+                  {copySuccess ? 
+                    <><Check size={16} className="text-green-400" /> <span className="text-xs text-green-400">Copied!</span></> : 
+                    <><Copy size={16} className="text-purple-300" /> <span className="text-xs text-purple-300">Copy</span></>
+                  }
+                </button>
+              )}
+            </div>
             <div className="border border-[#3a3a50] p-4 min-h-[150px] rounded-md bg-[#2a2a40] text-gray-300 overflow-y-auto max-h-[500px]">
               {isProcessing ? (
                 <div className="flex items-center justify-center h-full">

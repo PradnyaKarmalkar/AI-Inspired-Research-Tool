@@ -1,455 +1,303 @@
-# AI Document Processing Application: Project Analysis
+# AI Inspired Research Buddy - Project Analysis Report
 
 ## 1. Introduction
 
-The AI Document Processing Application is a cutting-edge web platform that leverages artificial intelligence to streamline the analysis, summarization, and interaction with academic and research documents. This project combines a modern Next.js frontend with a Flask-based backend to create a comprehensive tool designed specifically for researchers, students, and academics who need to process and extract insights from complex documents efficiently.
+**AI Inspired Research Buddy** is a comprehensive research assistance platform designed to streamline and enhance academic and scientific research processes through artificial intelligence. The project leverages modern web technologies alongside advanced AI models to create an intuitive, user-friendly interface for researchers, students, and professionals who need to process, analyze, and extract insights from academic papers and research documents.
 
-### Purpose and Motivation
+The platform was created to address common pain points in the research workflow: the time-consuming nature of reading extensive papers, difficulty in extracting key information quickly, and challenges in connecting research findings to relevant literature. By automating these processes, the Research Buddy aims to dramatically improve research productivity and effectiveness.
 
-This application was developed to address the growing need for AI-assisted research tools that can help users navigate the overwhelming volume of academic literature. Researchers often struggle with information overload, making it difficult to efficiently extract relevant insights from papers, identify connections between studies, and formulate comprehensive understanding of complex topics. This tool aims to solve these problems by applying state-of-the-art AI to automate and enhance document processing tasks.
+### Technology Stack
 
-### Technology Overview
+The project is built on a hybrid architecture combining:
 
-The project implements a full-stack architecture that incorporates multiple modern technologies:
+- **Frontend**: Next.js 15 with React 19, utilizing TypeScript for type safety and Tailwind CSS for styling
+- **Backend API**: Flask/FastAPI (Python) for AI processing and Express.js (Node.js) for authentication
+- **Database**: MySQL for user authentication and Chroma vector database for document storage
+- **AI Models**: Google Gemini models for summarization and report generation, Groq with Llama-3 for Q&A functionality
+- **Vector Embeddings**: Google Generative AI Embeddings for document processing
 
-**Frontend Technologies:**
-- **Next.js 15 with React 19**: Provides a robust framework for building a responsive, server-rendered user interface with the latest React features.
-- **TypeScript**: Ensures type safety and improves code maintainability with static type checking.
-- **TailwindCSS**: Enables rapid UI development with utility-first CSS design patterns and consistent styling.
-- **React Markdown**: Renders markdown content from AI-generated responses for better readability.
-
-**Backend Technologies:**
-- **Flask**: A lightweight Python web framework that serves as the API backend.
-- **LangChain**: Orchestrates complex AI operations, manages document processing workflows, and connects to various AI models.
-- **MongoDB**: Provides document-based storage for user data, document metadata, and interaction history.
-- **Generative AI Models**: Leverages advanced language models for document summarization, question answering, and recommendation tasks.
+This technology combination allows for a responsive, modern UI on the frontend while leveraging powerful AI capabilities on the backend to process and analyze research documents.
 
 ## 2. Functionalities
 
-The application offers several core functionalities designed to enhance the research workflow:
+The Research Buddy offers several key features designed to assist researchers throughout their workflow:
 
 ### Document Summarization
+**Technology**: Gemini 2.5 Pro
+**Implementation**: The platform uses the `DocumentSummarizer` class to:
+1. Extract and preprocess text from PDF documents using PyPDFLoader
+2. Split documents into manageable chunks with RecursiveCharacterTextSplitter
+3. Apply embeddings clustering to identify key sections
+4. Generate concise, structured summaries through the Gemini model
+5. Format results in Markdown for better readability
 
-**Description**: Allows users to upload research papers (PDF format) and receive AI-generated comprehensive summaries of the content.
+### Question & Answer with Research Documents
+**Technology**: Groq API with Llama-3 8B model
+**Implementation**:
+1. Documents are processed via the `QAModel` class
+2. Content is split into semantic chunks and embedded using Google's embedding model
+3. Chunks are stored in a Chroma vector database for efficient retrieval
+4. User questions trigger semantic similarity search against the document chunks
+5. Retrieved context is sent to the LLM along with the question for accurate answers
 
-**Technologies Used**:
-- **Frontend**: React components for file uploading and markdown rendering
-- **Backend**: LangChain document processors and text splitters
-- **Models**: Uses large language models to generate concise yet informative summaries
-- **Storage**: Stores processed documents in MongoDB for future reference
-
-**Flow**:
-1. User uploads a PDF document via the web interface
-2. Backend processes and extracts text from the PDF
-3. Text is split into manageable chunks and processed by the document processor
-4. AI model generates a comprehensive summary
-5. Summary is presented to the user with proper formatting
-
-### Question Answering
-
-**Description**: Enables users to ask specific questions about uploaded documents and receive precise answers based on the document's content.
-
-**Technologies Used**:
-- **Frontend**: Interactive question input interface with real-time feedback
-- **Backend**: Vector storage for semantic search capabilities
-- **Models**: Utilizes embedding models to convert document chunks and queries into vector representations
-- **Processing**: Creates a retrieval-augmented generation system that finds relevant context before generating answers
-
-**Flow**:
-1. User uploads a document (if not already done)
-2. Document is processed and indexed in a vector database
-3. User enters a specific question about the document
-4. System retrieves relevant document chunks that might contain the answer
-5. AI model generates an answer based on the retrieved context
-6. Answer is displayed to the user with source references when applicable
+### Research Report Generation
+**Technology**: Gemini 2.5 Pro
+**Implementation**:
+1. Similar to summarization but with a more structured approach
+2. The `ReportGenerator` class processes PDF documents
+3. Uses clustering to identify important sections
+4. Generates comprehensive, formal reports with proper sections, headings, and formatting
+5. Outputs are formatted in Markdown with scientific report structure
 
 ### Research Paper Recommendations
+**Technology**: DuckDuckGo Search API
+**Implementation**:
+1. The `SearchPapers` class interfaces with DuckDuckGo's search API
+2. Searches are refined to focus on academic and research papers
+3. Customizable parameters for region, time limits, and safety filters
+4. Returns relevant papers based on user queries or document content
 
-**Description**: Suggests related research papers based on the user's current documents or specific research interests.
+### User Authentication & Profile Management
+**Technology**: MySQL, Express.js, bcrypt
+**Implementation**:
+1. Secure user registration and login system
+2. Password hashing for security
+3. Profile image upload and management
+4. Session management with local storage
 
-**Technologies Used**:
-- **Frontend**: Card-based UI for displaying recommendations
-- **Backend**: Document similarity algorithms
-- **APIs**: Integration with academic paper databases and search engines
-- **Models**: Embedding models to represent papers and find semantic similarities
-
-**Flow**:
-1. System analyzes user's uploaded documents or explicit topic interests
-2. Backend searches for semantically similar papers in connected databases
-3. Results are filtered and ranked by relevance
-4. Top recommendations are presented to the user with relevant metadata
-
-### Report Generation
-
-**Description**: Creates structured reports from research documents, extracting key information and organizing it into cohesive sections.
-
-**Technologies Used**:
-- **Frontend**: Template selection interface and preview capabilities
-- **Backend**: Document structure analysis
-- **Models**: Specialized models for identifying document sections and extracting structured information
-
-**Flow**:
-1. User selects a document and a report template
-2. System analyzes the document structure to identify key sections
-3. AI extracts and organizes relevant information according to the template
-4. A structured report is generated and presented to the user
-5. User can edit and customize the report before finalizing
+### Flow Chart of Core Functionality
 
 ```mermaid
 flowchart TD
-    A[User Uploads Document] --> B{Document Type}
-    B -->|PDF| C[Extract Text]
-    C --> D[Process Document]
-    D --> E[Store in Vector Database]
-    E --> F{User Request}
-    F -->|Summarize| G[Generate Summary]
-    F -->|Ask Question| H[Retrieve Context]
-    H --> I[Generate Answer]
-    F -->|Create Report| J[Extract Structured Info]
-    J --> K[Format Report]
-    F -->|Get Recommendations| L[Find Similar Documents]
-    L --> M[Rank & Present Recommendations]
-    G --> N[Display Results to User]
-    I --> N
-    K --> N
-    M --> N
+    A[User] -->|Uploads PDF| B[File Processing]
+    B -->|Extract Text| C[Text Chunking]
+    C -->|Generate Embeddings| D[Vector Database]
+    
+    A -->|Request Summary| E[Summarization Module]
+    E -->|Retrieve Document| D
+    E -->|Process with Gemini| F[Generate Summary]
+    F -->|Return Results| A
+    
+    A -->|Ask Question| G[Q&A Module]
+    G -->|Semantic Search| D
+    G -->|Process with Llama-3| H[Generate Answer]
+    H -->|Return Results| A
+    
+    A -->|Request Report| I[Report Generator]
+    I -->|Retrieve Document| D
+    I -->|Process with Gemini| J[Generate Report]
+    J -->|Return Results| A
+    
+    A -->|Request Recommendations| K[Paper Recommendation]
+    K -->|Search via API| L[DuckDuckGo Search]
+    L -->|Return Results| A
 ```
 
-## 3. Models and APIs
+## 3. Models and APIs Used
 
-The application leverages several AI models and external APIs to deliver its core functionalities:
+### AI Models
 
-### Language Models
+| Model | Purpose | Location |
+|-------|---------|----------|
+| **Gemini 2.5 Pro** | Document summarization | `core_module/summarizer.py` |
+| **Gemini 2.5 Pro** | Report generation | `core_module/report_generator.py` |
+| **Llama-3 8B (via Groq)** | Question answering | `core_module/qa_model.py` |
+| **Google Generative AI Embeddings** | Vector embeddings for document chunks | Used across all AI modules |
 
-1. **Google Generative AI (Gemma 7B)**
-   - **Usage**: Primary model for generating summaries and answering questions
-   - **Implementation**: Integrated through Hugging Face API in the `qa_model.py` file
-   - **Features**: Provides context-aware responses based on document content
+### APIs
 
-2. **Embedding Models**
-   - **Type**: HuggingFace embeddings
-   - **Usage**: Creates vector representations of document chunks for semantic search
-   - **Implementation**: Used in `document_processor.py` for indexing and retrieval
-   - **Features**: Enables semantic similarity search for finding relevant document sections
+| API | Purpose | Location |
+|-----|---------|----------|
+| **Google Generative AI API** | Access to Gemini models | `core_module/summarizer.py`, `core_module/report_generator.py` |
+| **Groq API** | Fast inference for Llama-3 model | `core_module/qa_model.py` |
+| **DuckDuckGo Search API** | Research paper recommendations | `core_module/recommedPapers.py` |
+| **Flask/FastAPI Endpoints** | Backend processing of documents | `api/api.py` |
+| **Express.js Endpoints** | User authentication and profile management | `api/api.py` |
 
-### Document Processing Tools
+### Authentication and Database
 
-1. **LangChain Document Loaders**
-   - **Usage**: Extract text and metadata from PDFs
-   - **Implementation**: Used in the document processor component
-   - **Features**: Handles various document formats and maintains structural information
+The application uses MySQL for user authentication and profile management. User credentials are securely stored with password hashing via bcrypt. The database schema includes tables for users with profile information including paths to profile images.
 
-2. **LangChain Text Splitters**
-   - **Usage**: Divides documents into manageable chunks while preserving context
-   - **Implementation**: RecursiveCharacterTextSplitter in document_processor.py
-   - **Features**: Intelligent text chunking that respects semantic boundaries
-
-### Vector Databases
-
-1. **Chroma Vector Store**
-   - **Usage**: Stores document embeddings for efficient semantic retrieval
-   - **Implementation**: Integrated in document_processor.py
-   - **Features**: Performs similarity searches to find relevant document sections for questions
-
-### External APIs
-
-1. **Hugging Face API**
-   - **Usage**: Accesses hosted AI models for inference
-   - **Implementation**: Used in qa_model.py to query the Gemma model
-   - **Features**: Provides reliable model hosting and inference capabilities
-
-2. **Authentication Services**
-   - **Usage**: User authentication and profile management
-   - **Implementation**: Custom implementation in the Flask backend
-   - **Features**: Secure password handling with bcrypt
-
-## 4. Architecture
-
-The application follows a modern web architecture pattern with clear separation of concerns:
-
-```mermaid
-graph TB
-    subgraph "Frontend Layer"
-        A[Next.js Application] --> B[React Components]
-        B --> C[TailwindCSS Styling]
-        A --> D[Client-Side Auth]
-    end
-    subgraph "Backend Layer"
-        E[Flask API Server] --> F[Document Processor]
-        E --> G[QA Model]
-        E --> H[User Management]
-        F --> I[LangChain Tools]
-    end
-    subgraph "Data Layer"
-        J[MongoDB] --> K[User Profiles]
-        J --> L[Document Metadata]
-        M[Vector Store] --> N[Document Embeddings]
-    end
-    subgraph "AI Services"
-        O[LLM APIs] --> P[Gemma 7B]
-        O --> Q[Embedding Models]
-    end
-    A <-->|HTTP/REST| E
-    F <--> M
-    G <--> O
-    H <--> J
-```
-
-### Execution Flow
-
-The following diagram illustrates the typical execution flow for processing a document and answering a question:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant APIServer as Flask API Server
-    participant DocProcessor as Document Processor
-    participant VectorDB as Vector Database
-    participant LLM as Language Model
-    
-    User->>Frontend: Upload Document
-    Frontend->>APIServer: POST /api/upload
-    APIServer->>DocProcessor: Process Document
-    DocProcessor->>DocProcessor: Extract & Split Text
-    DocProcessor->>VectorDB: Store Document Chunks
-    VectorDB-->>APIServer: Confirmation
-    APIServer-->>Frontend: Upload Success
-    Frontend-->>User: Document Ready
-    
-    User->>Frontend: Ask Question
-    Frontend->>APIServer: POST /api/ask
-    APIServer->>VectorDB: Query Relevant Chunks
-    VectorDB-->>APIServer: Return Context
-    APIServer->>LLM: Generate Answer (with Context)
-    LLM-->>APIServer: Return Answer
-    APIServer-->>Frontend: Send Answer
-    Frontend-->>User: Display Answer
-```
-
-### Component Architecture
-
-The application is organized into several key components:
-
-1. **UI Layer**
-   - Page Components: Home, Login, Signup, Summarization, QA, etc.
-   - Shared Components: Navigation, Cards, Input forms
-   - Context Providers: Theme, Auth, etc.
-
-2. **API Layer**
-   - REST Endpoints for document processing, user management, etc.
-   - WebSocket connections for real-time updates (future enhancement)
-
-3. **Processing Layer**
-   - Document handlers for different file types
-   - AI model integrations
-   - Vector database management
-
-4. **Data Layer**
-   - Database schemas for users, documents, history
-   - File storage for uploaded documents
-   - Vector indices for semantic search
-
-## 5. System Diagrams
-
-### Proposed System Diagram
-
-```mermaid
-flowchart TD
-    subgraph "Client Side"
-        A[User] --> B[Web Interface]
-        B <--> C[Next.js Frontend]
-    end
-    
-    subgraph "Server Side"
-        C <--> D[Flask API]
-        D <--> E[Document Processor]
-        D <--> F[QA Module]
-        D <--> G[Auth Service]
-        E <--> H[Vector Database]
-        F <--> I[AI Models]
-        G <--> J[User Database]
-    end
-    
-    subgraph "External Services"
-        I <--> K[Hugging Face API]
-    end
-    
-    H --- L[(Document Storage)]
-    J --- M[(User Profiles)]
-```
-
-### Block Diagram
-
-```mermaid
-graph TB
-    subgraph "Frontend Layer"
-        A1[Pages] --- A2[Components]
-        A2 --- A3[Contexts]
-        A1 --- A4[API Client]
-    end
-    
-    subgraph "Backend Layer"
-        B1[API Server] --- B2[Document Processor]
-        B1 --- B3[QA Engine]
-        B1 --- B4[Auth Service]
-        B2 --- B5[Vector Operations]
-    end
-    
-    subgraph "Data Layer"
-        C1[(User Database)] --- C2[(Document Storage)]
-        C2 --- C3[(Vector Embeddings)]
-    end
-    
-    subgraph "AI Services"
-        D1[LLM Integration] --- D2[Embedding Models]
-    end
-    
-    A4 <--> B1
-    B2 <--> C2
-    B3 <--> D1
-    B4 <--> C1
-    B5 <--> C3
-    D2 <--> C3
-```
+## 4. Architecture Diagrams
 
 ### Component Diagram
 
 ```mermaid
-graph TB
-    subgraph "Frontend Components"
-        F1[Layout] --- F2[Navigation]
-        F1 --- F3[Document Upload]
-        F1 --- F4[QA Interface]
-        F1 --- F5[Summarization]
-        F1 --- F6[Report Generator]
-        F1 --- F7[User Settings]
-        F1 --- F8[History Viewer]
-    end
-    
-    subgraph "Backend Components"
-        B1[Flask App] --- B2[Document Processor]
-        B1 --- B3[QA Model]
-        B1 --- B4[Authentication]
-        B1 --- B5[File Management]
-        B2 --- B6[Text Splitter]
-        B2 --- B7[Vector Indexer]
-        B3 --- B8[Context Retriever]
-        B3 --- B9[Answer Generator]
-    end
-    
-    F3 --> B5
-    F4 --> B3
-    F5 --> B2
-    F6 --> B3
-    F7 --> B4
-    F8 --> B1
-```
-
-### Use Case Diagram
-
-```mermaid
 graph TD
-    subgraph "Actors"
-        A1((User))
-        A2((Admin))
+    subgraph "Frontend (Next.js)"
+        UI[UI Components] --> Router[Next.js Router]
+        Pages[Pages] --> Router
+        Context[Context Providers] --> UI
     end
-    
-    subgraph "Use Cases"
-        UC1[Register Account]
-        UC2[Login to System]
-        UC3[Upload Document]
-        UC4[Ask Questions]
-        UC5[Generate Summary]
-        UC6[Create Report]
-        UC7[View History]
-        UC8[Update Profile]
-        UC9[Manage Users]
-        UC10[System Monitoring]
+
+    subgraph "Backend APIs"
+        Flask[Flask/FastAPI Service] --> AIModels[AI Processing Models]
+        Express[Express.js Service] --> Auth[Authentication Logic]
     end
-    
-    A1 --> UC1
-    A1 --> UC2
-    A1 --> UC3
-    A1 --> UC4
-    A1 --> UC5
-    A1 --> UC6
-    A1 --> UC7
-    A1 --> UC8
-    
-    A2 --> UC2
-    A2 --> UC9
-    A2 --> UC10
-```
 
-### Data Flow Diagram
+    subgraph "Databases"
+        MySQL[(MySQL Database)] --> Auth
+        VectorDB[(Chroma Vector DB)] --> AIModels
+    end
 
-```mermaid
-flowchart TD
-    U[User] -->|1. Uploads Document| F[Frontend]
-    F -->|2. Send Document| B[Backend API]
-    B -->|3. Process Document| DP[Document Processor]
-    DP -->|4. Extract Text| DP
-    DP -->|5. Split Text| DP
-    DP -->|6. Generate Embeddings| EM[Embedding Model]
-    EM -->|7. Return Embeddings| DP
-    DP -->|8. Store Vectors| VDB[Vector Database]
-    
-    U -->|9. Ask Question| F
-    F -->|10. Send Question| B
-    B -->|11. Query for Context| VDB
-    VDB -->|12. Return Relevant Chunks| B
-    B -->|13. Generate Answer| LLM[Language Model]
-    LLM -->|14. Return Response| B
-    B -->|15. Return Answer| F
-    F -->|16. Display Answer| U
+    subgraph "External Services"
+        GoogleAI[Google Generative AI] --> AIModels
+        Groq[Groq API] --> AIModels
+        DDGS[DuckDuckGo Search] --> AIModels
+    end
+
+    Router --> |API Calls| Flask
+    Router --> |Auth Calls| Express
+    AIModels --> VectorDB
+    Auth --> MySQL
 ```
 
 ### Class Diagram
 
 ```mermaid
 classDiagram
-    class DocumentProcessor {
-        -documents_dir: string
-        -vector_db_dir: string
-        -embeddings: HuggingFaceEmbeddings
-        +process_document(file_path: string): bool
-        +query_document(question: string): string
+    class DocumentSummarizer {
+        -chunk_size: int
+        -chunk_overlap: int
+        -summarize_llm: string
+        -embed_model: string
+        +extractText(file_path): texts
+        +summarizer(file_path): summary
     }
-    
+
+    class ReportGenerator {
+        -chunk_size: int
+        -chunk_overlap: int
+        -report_llm: string
+        -embed_model: string
+        +extractText(file_path): texts
+        +generate_report(file_path): report
+    }
+
     class QAModel {
-        -document_processor: DocumentProcessor
-        -current_document: string
-        +process_document(file_path: string): dict
-        +get_answer(question: string): dict
-        -_get_gemma_response(prompt: string): string
+        -vector_store: VectorStore
+        +get_llm(): LLM
+        +get_prompt(): PromptTemplate
+        +get_embeddings(): Embeddings
+        +process_uploaded_file(file_path): vector_store
+        +has_documents(): bool
+        +get_vector_store(): vector_store
+        +answer_question(query): answer
     }
-    
-    class FlaskAPI {
-        -app: Flask
-        -qa_model: QAModel
-        -UPLOAD_FOLDER: string
-        -PROFILE_PHOTOS_FOLDER: string
-        +upload_file(): Response
-        +ask_question(): Response
-        +upload_profile_photo(): Response
-        +get_profile_photo(filename): Response
-        +update_password(): Response
-        +get_history(): Response
+
+    class SearchPapers {
+        -ddgs: DDGS
+        -region: string
+        -safesearch: string
+        -timelimit: string
+        -backend: string
+        -max_results: int
+        +getResults(query): results
     }
-    
-    class UserAuth {
-        +create_user(username, email, password_hash): dict
-        +verify_user(identifier, password_hash): dict
-        +update_profile_path(user_id, profile_path): dict
-        +update_password(user_id, current_pwd, new_pwd): dict
-        +check_user_exists(username, email): dict
-        +get_profile_path(user_id): dict
+
+    DocumentSummarizer --> Config
+    ReportGenerator --> Config
+    QAModel --> Config
+    SearchPapers --> Config
+
+    class Config {
+        +CHUNK_SIZE: int
+        +CHUNK_OVERLAP: int
+        +REPORT_CHUNK_SIZE: int
+        +REPORT_CHUNK_OVERLAP: int
+        +QA_CHUNK_SIZE: int
+        +QA_CHUNK_OVERLAP: int
+        +SUMMARIZER_MODEL: string
+        +EMBED_MODEL: string
+        +REPORT_MODEL: string
+        +REGION: string
+        +SAFESEARCH: string
+        +TIMELIMIT: string
+        +BACKEND: string
+        +MAX_RESULTS: int
+        +QA_MODEL: string
     }
+```
+
+### Block Diagram
+
+```mermaid
+graph TB
+    subgraph "User Interface Layer"
+        direction LR
+        HomePage[Home Page] --- FeaturePages[Feature Pages]
+        FeaturePages --- AuthPages[Auth Pages]
+        FeaturePages --- ProfilePages[Profile Pages]
+    end
+
+    subgraph "API Layer"
+        direction LR
+        AuthAPI[Authentication API] --- DocAPI[Document Processing API]
+        DocAPI --- QAAPI[Q&A API]
+        QAAPI --- RecommendAPI[Recommendation API]
+    end
+
+    subgraph "Core Processing Layer"
+        direction LR
+        Summarizer[Summarizer Module] --- QAEngine[Q&A Engine]
+        QAEngine --- ReportGen[Report Generator]
+        ReportGen --- PaperRecommender[Paper Recommender]
+    end
+
+    subgraph "AI Service Layer"
+        direction LR
+        Gemini[Gemini Models] --- Llama[Llama-3 Model]
+        Llama --- Embeddings[Vector Embeddings]
+        Embeddings --- SearchAPI[Search API]
+    end
+
+    subgraph "Data Layer"
+        direction LR
+        UserDB[User Database] --- DocStorage[Document Storage]
+        DocStorage --- VectorDB[Vector Database]
+    end
+
+    FeaturePages --> API_Layer
+    API_Layer --> Core_Processing_Layer
+    Core_Processing_Layer --> AI_Service_Layer
+    AI_Service_Layer --> Data_Layer
+```
+
+### Proposed System Diagram
+
+```mermaid
+graph TB
+    User[User] --> WebApp[Web Application]
     
-    FlaskAPI --> QAModel
-    QAModel --> DocumentProcessor
-    FlaskAPI --> UserAuth
+    WebApp --> AuthSystem[Authentication System]
+    WebApp --> UploadSystem[Document Upload System]
+    WebApp --> ProcessingSystem[AI Processing System]
+    
+    AuthSystem --> UserDB[(User Database)]
+    
+    UploadSystem --> Storage[Document Storage]
+    Storage --> ProcessingSystem
+    
+    ProcessingSystem --> SumModule[Summarization Module]
+    ProcessingSystem --> QAModule[Q&A Module]
+    ProcessingSystem --> ReportModule[Report Generation Module]
+    ProcessingSystem --> RecommendModule[Recommendation Module]
+    
+    SumModule --> GeminiAPI[Gemini API]
+    ReportModule --> GeminiAPI
+    QAModule --> GroqAPI[Groq API]
+    RecommendModule --> DDGAPI[DuckDuckGo API]
+    
+    SumModule --> VectorDB[(Vector Database)]
+    QAModule --> VectorDB
+    ReportModule --> VectorDB
+    
+    SumModule --> ResultsToUser[Results]
+    QAModule --> ResultsToUser
+    ReportModule --> ResultsToUser
+    RecommendModule --> ResultsToUser
+    
+    ResultsToUser --> User
 ```
 
 ### Sequence Diagram
@@ -457,115 +305,179 @@ classDiagram
 ```mermaid
 sequenceDiagram
     actor User
-    participant Frontend
-    participant API as Flask API
-    participant Auth as AuthService
-    participant DP as DocumentProcessor
-    participant QA as QAModel
-    participant LLM as Language Model
-    participant VDB as Vector Database
+    participant FE as Frontend
+    participant Auth as Auth API
+    participant Processor as Document Processor
+    participant AI as AI Models
+    participant DB as Databases
     
-    User->>Frontend: Login (username, password)
-    Frontend->>API: POST /api/login
-    API->>Auth: verify_user(username, password)
-    Auth-->>API: user data / error
-    API-->>Frontend: Authentication response
-    Frontend-->>User: Login success/failure
+    User->>FE: Login/Register
+    FE->>Auth: Send Credentials
+    Auth->>DB: Verify/Store User
+    DB->>Auth: Confirm Action
+    Auth->>FE: Authentication Response
+    FE->>User: Display Dashboard
     
-    User->>Frontend: Upload Document
-    Frontend->>API: POST /api/upload
-    API->>QA: process_document(file)
-    QA->>DP: process_document(file)
-    DP->>DP: Extract & split text
-    DP->>VDB: Store vectors
-    VDB-->>DP: Confirm storage
-    DP-->>QA: Processing success
-    QA-->>API: Success response
-    API-->>Frontend: Upload status
-    Frontend-->>User: Document ready
+    User->>FE: Upload Document
+    FE->>Processor: Send Document
+    Processor->>AI: Extract & Process Text
+    AI->>DB: Store Document Vectors
+    DB->>AI: Confirm Storage
+    AI->>Processor: Processing Complete
+    Processor->>FE: Upload Confirmation
+    FE->>User: Document Ready
     
-    User->>Frontend: Ask Question
-    Frontend->>API: POST /api/ask
-    API->>QA: get_answer(question)
-    QA->>DP: query_document(question)
-    DP->>VDB: Search relevant context
-    VDB-->>DP: Return context chunks
-    DP-->>QA: Return context
-    QA->>LLM: Generate answer with context
-    LLM-->>QA: Return generated answer
-    QA-->>API: Return answer with source
-    API-->>Frontend: Return formatted answer
-    Frontend-->>User: Display answer
+    User->>FE: Request Summarization
+    FE->>Processor: Summarize Request
+    Processor->>DB: Retrieve Document
+    DB->>Processor: Document Data
+    Processor->>AI: Generate Summary
+    AI->>Processor: Summary Result
+    Processor->>FE: Return Summary
+    FE->>User: Display Summary
+    
+    User->>FE: Ask Question
+    FE->>Processor: Q&A Request
+    Processor->>DB: Search Relevant Chunks
+    DB->>Processor: Context Data
+    Processor->>AI: Generate Answer
+    AI->>Processor: Answer Result
+    Processor->>FE: Return Answer
+    FE->>User: Display Answer
 ```
 
-### Database Design Diagram
+### Database Diagram
 
 ```mermaid
 erDiagram
     USERS {
         string user_id PK
-        string username UK
-        string email UK
+        string username
+        string email
         string hash_passwd
         string f_name
         string l_name
         string profile_path
-        timestamp created_at
-        timestamp updated_at
     }
     
-    DOCUMENTS {
+    VECTOR_DOCUMENTS {
         string doc_id PK
         string user_id FK
         string filename
-        string file_path
-        string title
+        datetime upload_date
         string doc_type
-        integer page_count
-        timestamp uploaded_at
+    }
+    
+    VECTOR_CHUNKS {
+        string chunk_id PK
+        string doc_id FK
+        string content
+        vector embedding
+        int position
     }
     
     HISTORY {
         string history_id PK
         string user_id FK
-        string doc_id FK
         string action_type
-        string query
-        string response
-        timestamp created_at
+        datetime timestamp
+        string content
+        string result
     }
     
-    SETTINGS {
-        string setting_id PK
-        string user_id FK
-        string theme
-        boolean notifications
-        json preferences
-    }
+    USERS ||--o{ VECTOR_DOCUMENTS : uploads
+    VECTOR_DOCUMENTS ||--o{ VECTOR_CHUNKS : contains
+    USERS ||--o{ HISTORY : generates
+```
+
+### Use Case Diagram
+
+```mermaid
+graph TB
+    subgraph "Actors"
+        User((User))
+        Admin((Admin))
+    end
     
-    USERS ||--o{ DOCUMENTS : uploads
-    USERS ||--o{ HISTORY : creates
-    USERS ||--o{ SETTINGS : configures
-    DOCUMENTS ||--o{ HISTORY : referenced_in
+    subgraph "System"
+        UC1[Register Account]
+        UC2[Login]
+        UC3[Upload Document]
+        UC4[Generate Summary]
+        UC5[Ask Questions]
+        UC6[Generate Report]
+        UC7[Get Paper Recommendations]
+        UC8[Update Profile]
+        UC9[Manage Subscription]
+        UC10[View History]
+        UC11[System Maintenance]
+        UC12[User Management]
+    end
+    
+    User --- UC1
+    User --- UC2
+    User --- UC3
+    User --- UC4
+    User --- UC5
+    User --- UC6
+    User --- UC7
+    User --- UC8
+    User --- UC9
+    User --- UC10
+    
+    Admin --- UC11
+    Admin --- UC12
+    Admin --- UC2
+```
+
+### Execution Flow Diagram
+
+```mermaid
+flowchart TB
+    Start([User Access]) --> Login{Authenticated?}
+    Login -->|No| Register[Register/Login]
+    Register --> Login
+    
+    Login -->|Yes| Dashboard[Dashboard]
+    
+    Dashboard --> FeatureSelect{Select Feature}
+    
+    FeatureSelect -->|Summarize| UploadDoc1[Upload Document]
+    UploadDoc1 --> ProcessDoc1[Process Document]
+    ProcessDoc1 --> GenerateSummary[Generate Summary]
+    GenerateSummary --> DisplayResults1[Display Summary]
+    
+    FeatureSelect -->|Q&A| UploadDoc2[Upload Document]
+    UploadDoc2 --> ProcessDoc2[Process Document]
+    ProcessDoc2 --> AskQuestion[Ask Question]
+    AskQuestion --> SearchContext[Search Context]
+    SearchContext --> GenerateAnswer[Generate Answer]
+    GenerateAnswer --> DisplayResults2[Display Answer]
+    
+    FeatureSelect -->|Report| UploadDoc3[Upload Document]
+    UploadDoc3 --> ProcessDoc3[Process Document]
+    ProcessDoc3 --> GenerateReport[Generate Report]
+    GenerateReport --> DisplayResults3[Display Report]
+    
+    FeatureSelect -->|Recommend| EnterTopic[Enter Topic]
+    EnterTopic --> SearchPapers[Search Papers]
+    SearchPapers --> DisplayResults4[Display Recommendations]
+    
+    DisplayResults1 --> Dashboard
+    DisplayResults2 --> Dashboard
+    DisplayResults3 --> Dashboard
+    DisplayResults4 --> Dashboard
+    
+    Dashboard --> Logout[Logout]
+    Logout --> End([End Session])
 ```
 
 ## 5. Conclusion
 
-The AI Document Processing Application demonstrates a sophisticated integration of modern web technologies with state-of-the-art AI capabilities. By combining Next.js and React on the frontend with Flask and LangChain on the backend, the application delivers a seamless user experience for complex document processing tasks.
+The AI Inspired Research Buddy represents a comprehensive solution for researchers looking to streamline their workflow through AI-powered tools. By integrating multiple AI models and services, the platform provides a complete research assistance ecosystem that can significantly reduce the time and effort required to process academic literature.
 
-The project showcases several noteworthy architectural decisions:
+The architecture follows modern best practices with a clear separation of concerns between the frontend and backend components. The use of Next.js for the frontend provides a responsive and user-friendly interface, while the Python-based AI processing backend leverages state-of-the-art language models for advanced document understanding.
 
-1. **Separation of Concerns**: Clear division between frontend, backend, and AI processing components
-2. **Scalable Vector Storage**: Implementation of efficient document retrieval using vector databases
-3. **Responsive UI**: Modern interface with dark/light mode support and mobile-friendly design
-4. **Secure Authentication**: Proper password hashing and user session management
-5. **Modular Architecture**: Well-organized codebase that facilitates future extensions
+The system's modular design allows for easy expansion with additional features in the future, such as citation management, collaborative research workspaces, or integration with academic databases. The current implementation already demonstrates the power of combining multiple AI capabilities into a cohesive research tool.
 
-Future enhancements could include:
-- Integration with academic databases for direct paper access
-- Collaborative features for team research
-- Advanced visualization of document relationships
-- Custom training of domain-specific models for specialized research fields
-- Implementation of a citation management system
-
-This application represents a significant step forward in AI-assisted research tools, providing researchers with powerful capabilities to navigate and extract insights from the ever-growing body of academic literature. 
+By addressing key pain points in the research process—document understanding, information extraction, and literature discovery—the Research Buddy has the potential to significantly enhance research productivity across academic disciplines. 

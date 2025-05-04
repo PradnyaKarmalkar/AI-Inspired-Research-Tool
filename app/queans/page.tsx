@@ -144,7 +144,7 @@ export default function QuestionAnsweringPage() {
         <h1 className="text-2xl font-bold mb-6"> Research Buddy</h1>
         <nav className="space-y-3">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push('/home')} />
-          <NavItem icon={<History size={20} />} text="History" />
+          
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Settings" />
         </nav>
@@ -162,7 +162,7 @@ export default function QuestionAnsweringPage() {
           <button
             onClick={() => router.push('/billing')}
             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
-            Join Us for $1/month
+            Join Us for $3/month
           </button>
         </div>
 

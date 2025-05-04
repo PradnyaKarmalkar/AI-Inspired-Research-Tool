@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, History, CreditCard, Settings, ArrowLeft, LogOut } from 'lucide-react';
+import { Home, History, CreditCard, Settings, ArrowLeft, LogOut, Copy, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import ReactMarkdown from 'react-markdown';
 
@@ -17,6 +17,7 @@ export default function ReportGeneratorPage() {
   const [numPages, setNumPages] = useState(3);
   const [processingTime, setProcessingTime] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,6 +79,19 @@ export default function ReportGeneratorPage() {
     }
   };
 
+  const handleCopyReport = () => {
+    if (report) {
+      navigator.clipboard.writeText(report)
+        .then(() => {
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy text: ', err);
+        });
+    }
+  };
+
   return (
     <div className={`flex h-screen ${isDarkMode ? 'bg-[#0f0f1b] text-white' : 'bg-gray-100 text-gray-900'} font-sans`}>
       {/* Sidebar */}
@@ -85,7 +99,7 @@ export default function ReportGeneratorPage() {
         <h1 className="text-3xl font-bold mb-6">Research Buddy</h1>
         <nav className="flex-grow space-y-4">
           <NavItem icon={<Home size={20} />} text="Home" onClick={() => router.push("/home")} />
-          <NavItem icon={<History size={20} />} text="History" onClick={() => router.push("/history")} />
+          
           <NavItem icon={<CreditCard size={20} />} text="Billing" onClick={() => router.push("/billing")} />
           <NavItem icon={<Settings size={20} />} text="Setting" onClick={() => router.push("/settings_pg")}/>
         </nav>
@@ -126,7 +140,7 @@ export default function ReportGeneratorPage() {
           <button
             onClick={() => router.push('/billing')}
             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:scale-105 transition">
-            Join Us for $1/month
+            Join Us for $3/month
           </button>
         </div>
 
@@ -176,7 +190,7 @@ export default function ReportGeneratorPage() {
             </div>
 
             {/* Report Length Control */}
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label className={`block text-sm text-gray-400 mb-2 ${isDarkMode ? '' : 'text-gray-600'}`}>
                 Report Length (pages):
               </label>
@@ -191,7 +205,7 @@ export default function ReportGeneratorPage() {
                 />
                 <span className="ml-3 text-white font-medium">{numPages}</span>
               </div>
-            </div>
+            </div> */}
 
             {uploadError && (
               <p className={`text-red-500 text-sm mb-4 ${isDarkMode ? '' : 'text-gray-600'}`}>{uploadError}</p>
@@ -213,11 +227,25 @@ export default function ReportGeneratorPage() {
           <div className={`bg-[#1e1e2f] p-6 rounded-lg border border-[#2e2e40] ${isDarkMode ? '' : 'bg-white'}`}>
             <div className="flex justify-between items-center mb-4">
               <h3 className={`text-lg font-semibold text-purple-300 ${isDarkMode ? '' : 'text-gray-900'}`}>📑 Generated Report</h3>
-              {processingTime && (
-                <span className={`text-xs text-gray-400 ${isDarkMode ? '' : 'text-gray-600'}`}>
-                  Generated in {processingTime}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {processingTime && (
+                  <span className={`text-xs text-gray-400 ${isDarkMode ? '' : 'text-gray-600'}`}>
+                    Generated in {processingTime}
+                  </span>
+                )}
+                {report && (
+                  <button 
+                    onClick={handleCopyReport}
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-[#2a2a40] hover:bg-[#3a3a50] transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    {copySuccess ? 
+                      <><Check size={16} className="text-green-400" /> <span className="text-xs text-green-400">Copied!</span></> : 
+                      <><Copy size={16} className="text-purple-300" /> <span className="text-xs text-purple-300">Copy</span></>
+                    }
+                  </button>
+                )}
+              </div>
             </div>
             <div className="border border-[#3a3a50] p-4 max-h-[600px] overflow-y-auto rounded-md bg-[#2a2a40] text-gray-300 whitespace-pre-wrap">
               {report ? (

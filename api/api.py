@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ai_agent.summarizer import DocumentSummarizer
+from core_module.summarizer import DocumentSummarizer
 from flask import Flask, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
 import hashlib
@@ -10,7 +10,7 @@ import hashlib
 from werkzeug.utils import secure_filename
 import time
 import subprocess
-from ai_agent.recommedPapers import SearchPapers
+from core_module.recommedPapers import SearchPapers
 from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
@@ -284,7 +284,7 @@ def upload_pdf_qa():
         # Create upload directory if it doesn't exist
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)  # Go up 1 level
-        upload_dir = os.path.join(project_root, 'ai_agent', 'documents')
+        upload_dir = os.path.join(project_root, 'core_module', 'documents')
 
         # Ensure the directory exists and is writable
         try:
@@ -315,7 +315,7 @@ def upload_pdf_qa():
             }), 500
     
         try:
-            from ai_agent.qa_model import QAModel
+            from core_module.qa_model import QAModel
             
             # Initialize the QA model
             qa_model = QAModel()
@@ -364,7 +364,7 @@ def upload_pdf_qa():
 @app.route('/check-documents', methods=['GET'])
 def check_documents():
     try:
-        from ai_agent.qa_model import QAModel
+        from core_module.qa_model import QAModel
         
         # Initialize the QA model and check for documents
         qa_model = QAModel()
@@ -390,7 +390,7 @@ def ask_question():
         return jsonify({"status": "error", "message": "No question provided"}), 400
 
     try:
-        from ai_agent.qa_model import QAModel
+        from core_module.qa_model import QAModel
         
         # Initialize the QA model
         qa_model = QAModel()
@@ -500,7 +500,7 @@ def upload_pdf_report():
 
         # Generate the report
         try:
-            from ai_agent.report_generator import ReportGenerator
+            from core_module.report_generator import ReportGenerator
             
             # Initialize the summarizer
             reportGenerator = ReportGenerator()
