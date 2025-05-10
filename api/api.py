@@ -206,6 +206,7 @@ def upload_pdf_sum():
         return jsonify({"status": "error", "message": "No file part"}), 400
 
     file = request.files['file']
+    model_name = request.form.get('model', None)  # Get the selected model
 
     if file.filename == '':
         return jsonify({"status": "error", "message": "No selected file"}), 400
@@ -231,20 +232,41 @@ def upload_pdf_sum():
         file.save(file_path)
 
         try:
-            # Initialize the summarizer
-            summarizer = DocumentSummarizer()
+            # Initialize the summarizer with the selected model
+            summarizer = DocumentSummarizer(model_name=model_name)
 
-            # Process the document and get summary
-            summary = ""
+            print("\n======= LLM SUMMARIZATION STARTED =======")
+            print(f"Summarizing document: {saved_filename}")
+            print(f"Using model: {model_name if model_name else 'default'}")
+            
+            # Use a separate stream for terminal output
+            sys.stdout.write("\n--- LLM Summary Stream ---\n")
+            sys.stdout.flush()
+            
+            # Collect all chunks and print to console in real-time
+            all_chunks = []
             for chunk in summarizer.summarizer(file_path):
-                summary += chunk
+                all_chunks.append(chunk)
+                # Print to terminal with flush to show real-time progress
+                sys.stdout.write(chunk)
+                sys.stdout.flush()
+                
+            # Add a clear separator after the summary content
+            sys.stdout.write("\n--- End of LLM Summary ---\n")
+            sys.stdout.flush()
+            
+            # Combine all chunks into the final summary
+            summary = "".join(all_chunks)
+            
+            print("\n======= LLM SUMMARIZATION COMPLETED =======\n")
 
             return jsonify({
                 "status": "success",
                 "message": "File uploaded and summarized",
                 "filename": saved_filename,
                 "path": file_path,
-                "summary": summary
+                "summary": summary,
+                "model_used": model_name if model_name else "default"
             }), 200
 
         except Exception as e:
@@ -263,8 +285,15 @@ def upload_pdf_sum():
             "message": f"Error during upload: {str(e)}"
         }), 500
 
-@app.route('/upload-pdf-qa', methods=['POST'])
+@app.route('/upload-pdf-qa', methods=['POST', 'OPTIONS'])
 def upload_pdf_qa():    
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+        
     try:
         if 'file' not in request.files:
             return jsonify({"status": "error", "message": "No file part"}), 400
@@ -475,6 +504,7 @@ def upload_pdf_report():
         file = request.files['pdf']
         filename = request.form.get('filename', '')
         num_pages = request.form.get('numPages', '3')
+        model_name = request.form.get('model', None)  # Get the selected model
         
         if file.filename == '':
             return jsonify({"status": "error", "message": "No selected file"}), 400
@@ -502,20 +532,41 @@ def upload_pdf_report():
         try:
             from core_module.report_generator import ReportGenerator
             
-            # Initialize the summarizer
-            reportGenerator = ReportGenerator()
+            # Initialize the report generator with the selected model
+            reportGenerator = ReportGenerator(model_name=model_name)
 
-            # Process the document and get summary
-            report = ""
+            print("\n======= LLM REPORT GENERATION STARTED =======")
+            print(f"Generating report for: {saved_filename}")
+            print(f"Using model: {model_name if model_name else 'default'}")
+            
+            # Use a separate stream for terminal output
+            sys.stdout.write("\n--- LLM Response Stream ---\n")
+            sys.stdout.flush()
+            
+            # Collect all chunks and print to console in real-time
+            all_chunks = []
             for chunk in reportGenerator.generate_report(file_path):
-                report += chunk
+                all_chunks.append(chunk)
+                # Print to terminal with flush to show real-time progress
+                sys.stdout.write(chunk)
+                sys.stdout.flush()
+                
+            # Add a clear separator after the report content
+            sys.stdout.write("\n--- End of LLM Response ---\n")
+            sys.stdout.flush()
+            
+            # Combine all chunks into the final report
+            report = "".join(all_chunks)
+            
+            print("\n======= LLM REPORT GENERATION COMPLETED =======\n")
 
             return jsonify({
                 "status": "success",
                 "message": "File uploaded and report generated",
                 "filename": saved_filename,
                 "path": file_path,
-                "report": report
+                "report": report,
+                "model_used": model_name if model_name else "default"
             }), 200
 
         except Exception as e:

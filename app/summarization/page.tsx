@@ -15,6 +15,7 @@ export default function SummarizationPage() {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-pro-exp-03-25');
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,6 +39,7 @@ export default function SummarizationPage() {
       setIsProcessing(true);
       const formData = new FormData();
       formData.append('file', selectedFile);
+      formData.append('model', selectedModel);
 
       try {
         const response = await fetch('http://localhost:5000/upload-pdf-sum', {
@@ -141,14 +143,24 @@ export default function SummarizationPage() {
             <p className="text-sm text-gray-400 mb-3">
               Upload a PDF to generate a summary.
             </p>
-            {/* <input
-              type="text"
-              className="w-full p-3 bg-[#2e2e40] text-white border border-[#3a3a50] rounded-md placeholder-gray-400 mb-2"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter URL here..."
-            /> */}
-            {/* <p className="text-center text-gray-500 my-2">or</p> */}
+            
+            {/* Model Selection */}
+            <div className="mb-4">
+              <label className="block text-sm text-gray-400 mb-2">Select Model:</label>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className={`w-full p-2 rounded-md ${
+                  isDarkMode 
+                    ? 'bg-[#2e2e40] text-white border border-[#3a3a50]' 
+                    : 'bg-gray-100 text-gray-900 border border-gray-300'
+                }`}
+              >
+                <option value="gemini-2.5-pro-exp-03-25">High-quality detailed summarization</option>
+                <option value="gemini-2.0-flash">Fast and efficient summarization</option>
+              </select>
+            </div>
+
             <input
               type="file"
               accept=".pdf"

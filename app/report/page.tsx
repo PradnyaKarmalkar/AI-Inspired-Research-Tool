@@ -18,6 +18,7 @@ export default function ReportGeneratorPage() {
   const [processingTime, setProcessingTime] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-pro-exp-03-25');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -43,6 +44,7 @@ export default function ReportGeneratorPage() {
       formData.append('pdf', selectedFile);
       formData.append('filename', fileName);
       formData.append('numPages', numPages.toString());
+      formData.append('model', selectedModel);
 
       const response = await fetch('http://localhost:5000/api/upload-pdf-report', {
         method: 'POST',
@@ -190,7 +192,7 @@ export default function ReportGeneratorPage() {
             </div>
 
             {/* Report Length Control */}
-            {/* <div className="mb-4">
+            <div className="mb-4">
               <label className={`block text-sm text-gray-400 mb-2 ${isDarkMode ? '' : 'text-gray-600'}`}>
                 Report Length (pages):
               </label>
@@ -205,7 +207,26 @@ export default function ReportGeneratorPage() {
                 />
                 <span className="ml-3 text-white font-medium">{numPages}</span>
               </div>
-            </div> */}
+            </div>
+
+            {/* Model Selection */}
+            <div className="mb-4">
+              <label className={`block text-sm text-gray-400 mb-2 ${isDarkMode ? '' : 'text-gray-600'}`}>
+                Select Model:
+              </label>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className={`w-full p-2 rounded-md ${
+                  isDarkMode 
+                    ? 'bg-[#2e2e40] text-white border border-[#3a3a50]' 
+                    : 'bg-gray-100 text-gray-900 border border-gray-300'
+                }`}
+              >
+                <option value="gemini-2.5-pro-exp-03-25">High-quality detailed report</option>
+                <option value="gemini-2.0-flash">Fast and efficient report</option>
+              </select>
+            </div>
 
             {uploadError && (
               <p className={`text-red-500 text-sm mb-4 ${isDarkMode ? '' : 'text-gray-600'}`}>{uploadError}</p>

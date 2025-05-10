@@ -9,10 +9,10 @@ import os
 
 
 class DocumentSummarizer:
-    def __init__(self):
+    def __init__(self, model_name=None):
         self.chunk_size = config.CHUNK_SIZE
         self.chunk_overlap = config.CHUNK_OVERLAP
-        self.summarize_llm = config.SUMMARIZER_MODEL
+        self.summarize_llm = model_name if model_name in config.AVAILABLE_SUMMARIZER_MODELS else config.SUMMARIZER_MODEL
         self.embed_model = config.EMBED_MODEL
 
     def extractText(self, file_path):
@@ -39,11 +39,14 @@ class DocumentSummarizer:
 
     def summarizer(self, file_path):
         # Extract the document
+        print(f"[Summarizer] Extracting text from {file_path}")
         texts = self.extractText(file_path)
         doc_length = len(texts)
+        print(f"[Summarizer] Document split into {doc_length} chunks")
 
         # Dynamically adjust parameters based on document length
         dynamic_clusters = min(max(3, doc_length // 5), 10)  # Between 3-10 clusters
+        print(f"[Summarizer] Using {dynamic_clusters} clusters for document processing")
 
         # In the summarizer method, change how you initialize the LLM
         llm = ChatGoogleGenerativeAI(
@@ -54,6 +57,7 @@ class DocumentSummarizer:
             google_api_key=os.environ.get("GOOGLE_API_KEY")  # Add this line to explicitly use the API key
         )
         embeddings = GoogleGenerativeAIEmbeddings(model=self.embed_model)
+        print(f"[Summarizer] LLM initialized with model: {self.summarize_llm}")
 
         # Create the filter with dynamic clusters
         filter = EmbeddingsClusteringFilter(
@@ -63,13 +67,16 @@ class DocumentSummarizer:
 
         try:
             # Transform documents using the filter
+            print(f"[Summarizer] Clustering document chunks...")
             result = filter.transform_documents(documents=texts)
+            print(f"[Summarizer] Clustering complete. Processing {len(result)} sections")
 
             # Prepare prompt for direct streaming
             if doc_length < 10:
                 # For shorter documents, use a simple prompt
                 prompt = "\n\n".join([doc.page_content for doc in result])
                 prompt = f"Please summarize the following document:\n\n{prompt}"
+                print(f"[Summarizer] Using simple prompt for short document")
             else:
                 # For longer documents, provide more context
                 prompt = f"""
@@ -85,10 +92,13 @@ class DocumentSummarizer:
                 
                 for i, doc in enumerate(result):
                     prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"
+                print(f"[Summarizer] Using detailed prompt for longer document")
 
-            # Collect the complete summary
-            complete_summary = ""
-            # Stream directly from the LLM
+            print(f"[Summarizer] Prompt prepared. Sending to LLM...")
+            
+            # Get all the chunks first in a buffer
+            content_chunks = []
+            # Stream directly from the LLM but just collect chunks
             for chunk in llm.stream(prompt):
                 # Extract just the text content from the response
                 chunk_text = ""
@@ -99,15 +109,25 @@ class DocumentSummarizer:
                 elif isinstance(chunk, str):
                     chunk_text = chunk
 
-                # Add to complete summary
+                # Store the chunk
                 if chunk_text:
-                    complete_summary += chunk_text
-                    yield chunk_text
-
-            # Return the complete summary for saving
+                    content_chunks.append(chunk_text)
+            
+            # Now assemble the full summary
+            complete_summary = "".join(content_chunks)
+            
+            # Log completion AFTER all content has been collected
+            print(f"\n[Summarizer] Summarization complete.")
+            
+            # Now yield all chunks
+            for chunk in content_chunks:
+                yield chunk
+            
+            # Return the complete summary
             return complete_summary
 
         except Exception as e:
             error_message = f"Error during summarization: {str(e)}"
+            print(f"[Summarizer] ERROR: {error_message}")
             yield error_message
             return error_message

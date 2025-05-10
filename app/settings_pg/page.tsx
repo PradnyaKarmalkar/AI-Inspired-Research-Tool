@@ -345,69 +345,69 @@ export default function SettingsPage() {
         </div>
       ),
     },
-    {
-      id: "notifications",
-      icon: <Bell size={20} />,
-      title: "Notifications",
-      content: (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Email Notifications</h3>
-              <p className="text-sm text-gray-500">Receive email updates</p>
-            </div>
-            <button
-              onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.email ? "bg-blue-500" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.email ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Push Notifications</h3>
-              <p className="text-sm text-gray-500">Receive push notifications</p>
-            </div>
-            <button
-              onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.push ? "bg-blue-500" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.push ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Updates</h3>
-              <p className="text-sm text-gray-500">Get notified about updates</p>
-            </div>
-            <button
-              onClick={() => setNotifications({ ...notifications, updates: !notifications.updates })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.updates ? "bg-blue-500" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.updates ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   id: "notifications",
+    //   icon: <Bell size={20} />,
+    //   title: "Notifications",
+    //   content: (
+    //     <div className="space-y-4">
+    //       <div className="flex items-center justify-between">
+    //         <div>
+    //           <h3 className="font-medium">Email Notifications</h3>
+    //           <p className="text-sm text-gray-500">Receive email updates</p>
+    //         </div>
+    //         <button
+    //           onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
+    //           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    //             notifications.email ? "bg-blue-500" : "bg-gray-200"
+    //           }`}
+    //         >
+    //           <span
+    //             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+    //               notifications.email ? "translate-x-6" : "translate-x-1"
+    //             }`}
+    //           />
+    //         </button>
+    //       </div>
+    //       <div className="flex items-center justify-between">
+    //         <div>
+    //           <h3 className="font-medium">Push Notifications</h3>
+    //           <p className="text-sm text-gray-500">Receive push notifications</p>
+    //         </div>
+    //         <button
+    //           onClick={() => setNotifications({ ...notifications, push: !notifications.push })}
+    //           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    //             notifications.push ? "bg-blue-500" : "bg-gray-200"
+    //           }`}
+    //         >
+    //           <span
+    //             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+    //               notifications.push ? "translate-x-6" : "translate-x-1"
+    //             }`}
+    //           />
+    //         </button>
+    //       </div>
+    //       <div className="flex items-center justify-between">
+    //         <div>
+    //           <h3 className="font-medium">Updates</h3>
+    //           <p className="text-sm text-gray-500">Get notified about updates</p>
+    //         </div>
+    //         <button
+    //           onClick={() => setNotifications({ ...notifications, updates: !notifications.updates })}
+    //           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+    //             notifications.updates ? "bg-blue-500" : "bg-gray-200"
+    //           }`}
+    //         >
+    //           <span
+    //             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+    //               notifications.updates ? "translate-x-6" : "translate-x-1"
+    //             }`}
+    //           />
+    //         </button>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       id: "security",
       icon: <Shield size={20} />,

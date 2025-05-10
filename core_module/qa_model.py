@@ -43,8 +43,9 @@ except Exception as e:
     raise
 
 class QAModel:
-    def __init__(self):
+    def __init__(self, model_name=None):
         self.vector_store = None
+        self.qa_model = model_name if model_name in config.AVAILABLE_QA_MODELS else config.QA_MODEL
         logger.info("Initialized QAModel")
 
     # Initialize LLM
@@ -52,9 +53,9 @@ class QAModel:
         try:
             llm = ChatGroq(
                 groq_api_key=GROQ_API_KEY,
-                model_name=config.QA_MODEL
+                model_name=self.qa_model
             )
-            logger.info(f"Initialized LLM with model: {config.QA_MODEL}")
+            logger.info(f"Initialized LLM with model: {self.qa_model}")
             return llm
         except Exception as e:
             logger.error(f"Failed to initialize LLM: {str(e)}")

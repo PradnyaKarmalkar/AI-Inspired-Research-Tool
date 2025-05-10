@@ -71,15 +71,36 @@ export default function QuestionAnsweringPage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
+      // Create an AbortController to handle timeouts
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 30000); // 30 second timeout
+
       try {
+        console.log('Uploading file to API...');
+        
+        // Add proper headers for file upload
         const response = await fetch(`${API_BASE_URL}/upload-pdf-qa`, {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
+          // Don't set Content-Type header - the browser will set it with the correct boundary for multipart/form-data
         });
+        
+        clearTimeout(timeoutId);
+        console.log('Upload response received:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server returned error:', response.status, errorText);
+          throw new Error(`Server returned ${response.status}: ${errorText}`);
+        }
 
         const data = await response.json();
+        console.log('Upload response data:', data);
 
-        if (response.ok && data.status === 'success') {
+        if (data.status === 'success') {
           setUploadStatus('success');
           setUploadMessage('Document processed successfully! You can now ask questions.');
           setIsDocumentReady(true);
@@ -89,9 +110,18 @@ export default function QuestionAnsweringPage() {
           setIsDocumentReady(false);
         }
       } catch (error: any) {
+        clearTimeout(timeoutId);
         console.error('Upload error:', error);
-        setUploadStatus('error');
-        setUploadMessage('Failed to process document. Server may be unavailable.');
+        
+        // Handle abort errors specifically
+        if (error.name === 'AbortError') {
+          setUploadStatus('error');
+          setUploadMessage('Request timed out. The server may be busy or unavailable.');
+        } else {
+          setUploadStatus('error');
+          setUploadMessage('Failed to process document. Server may be unavailable.');
+        }
+        
         setIsDocumentReady(false);
       }
     }

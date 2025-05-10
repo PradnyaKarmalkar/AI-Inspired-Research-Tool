@@ -36,12 +36,11 @@ export default function BillingPage() {
       monthlyPrice: "Free",
       yearlyPrice: "Free",
       features: [
-        "2 Projects",
-        "Client Billing",
-        "Free Staging",
-        "Code Export",
-        "White labeling",
-        "Site password protection"
+        "File processing 5mb",
+        "Input Limit 20",
+        
+        
+        
       ],
       cta: "Current plan"
     },
@@ -50,12 +49,11 @@ export default function BillingPage() {
       monthlyPrice: "$3",
       yearlyPrice: "$35",
       features: [
-        "2 Projects",
-        "Client Billing",
-        "Free Staging",
-        "Code Export",
-        "White labeling",
-        "Site password protection"
+        "File processing 10mb",
+        "Input Limit 50",
+        
+        
+        
       ],
       cta: "Upgrade plan"
     },
@@ -64,12 +62,11 @@ export default function BillingPage() {
       monthlyPrice: "$5",
       yearlyPrice: "$60",
       features: [
-        "2 Projects",
-        "Client Billing",
-        "Free Staging",
-        "Code Export",
-        "White labeling",
-        "Site password protection"
+        "File processing upto 20mb",
+        "Input Limit 100",
+        
+        
+        
       ],
       cta: "Upgrade plan"
     }
