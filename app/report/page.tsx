@@ -191,7 +191,7 @@ export default function ReportGeneratorPage() {
               </label>
             </div>
 
-            {/* Report Length Control */}
+            {/* Report Length Control 
             <div className="mb-4">
               <label className={`block text-sm text-gray-400 mb-2 ${isDarkMode ? '' : 'text-gray-600'}`}>
                 Report Length (pages):
@@ -207,7 +207,7 @@ export default function ReportGeneratorPage() {
                 />
                 <span className="ml-3 text-white font-medium">{numPages}</span>
               </div>
-            </div>
+            </div>*/}
 
             {/* Model Selection */}
             <div className="mb-4">
@@ -223,8 +223,8 @@ export default function ReportGeneratorPage() {
                     : 'bg-gray-100 text-gray-900 border border-gray-300'
                 }`}
               >
-                <option value="gemini-2.5-pro-exp-03-25">High-quality detailed report</option>
-                <option value="gemini-2.0-flash">Fast and efficient report</option>
+                <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
               </select>
             </div>
 

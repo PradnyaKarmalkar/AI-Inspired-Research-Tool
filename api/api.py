@@ -243,20 +243,17 @@ def upload_pdf_sum():
             sys.stdout.write("\n--- LLM Summary Stream ---\n")
             sys.stdout.flush()
             
-            # Collect all chunks and print to console in real-time
-            all_chunks = []
-            for chunk in summarizer.summarizer(file_path):
-                all_chunks.append(chunk)
-                # Print to terminal with flush to show real-time progress
-                sys.stdout.write(chunk)
-                sys.stdout.flush()
-                
+            # Get the summary (now yields a complete summary at once)
+            summary_generator = summarizer.summarizer(file_path)
+            summary = next(summary_generator)
+            
+            # Print summary to console
+            sys.stdout.write(summary)
+            sys.stdout.flush()
+            
             # Add a clear separator after the summary content
             sys.stdout.write("\n--- End of LLM Summary ---\n")
             sys.stdout.flush()
-            
-            # Combine all chunks into the final summary
-            summary = "".join(all_chunks)
             
             print("\n======= LLM SUMMARIZATION COMPLETED =======\n")
 

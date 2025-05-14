@@ -156,8 +156,8 @@ export default function SummarizationPage() {
                     : 'bg-gray-100 text-gray-900 border border-gray-300'
                 }`}
               >
-                <option value="gemini-2.5-pro-exp-03-25">High-quality detailed summarization</option>
-                <option value="gemini-2.0-flash">Fast and efficient summarization</option>
+                <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
               </select>
             </div>
 

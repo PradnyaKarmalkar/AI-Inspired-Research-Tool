@@ -75,23 +75,43 @@ class DocumentSummarizer:
             if doc_length < 10:
                 # For shorter documents, use a simple prompt
                 prompt = "\n\n".join([doc.page_content for doc in result])
-                prompt = f"Please summarize the following document:\n\n{prompt}"
+                prompt = f"""Please summarize the following document:
+
+{prompt}
+
+FORMAT YOUR RESPONSE WITH CLEAN MARKDOWN:
+- Use # for main heading, ## for subheadings
+- Use bullet points (- or *) for lists
+- Use proper line breaks between paragraphs
+- Use bold (**text**) for emphasis"""
                 print(f"[Summarizer] Using simple prompt for short document")
             else:
                 # For longer documents, provide more context
-                prompt = f"""
-                Please summarize the following document which has been divided into {len(result)} sections. 
-                Provide a comprehensive summary that captures the main points and important details.
-                
-                Important:
-                - Do not hallucinate or add information not found in the document
-                - Create appropriate headings and subheadings based on the content
-                - Use bullets and new lines to make the summary more readable.
-                - FORMAT YOUR RESPONSE IN MARKDOWN.
-                """
+                prompt = f"""Please summarize the following document which has been divided into {len(result)} sections. 
+Create a comprehensive summary that captures the main points and important details.
+
+INSTRUCTIONS:
+- Do not hallucinate or add information not found in the document
+- Create appropriate headings and subheadings based on the content
+- Use bullets and new lines to make the summary readable
+
+YOUR RESPONSE MUST BE IN PROPER MARKDOWN FORMAT:
+- Use # for main heading (only one main heading)
+- Use ## and ### for subheadings
+- Use bullet points (- or *) for lists
+- For tables, use standard markdown table format:
+  | Header1 | Header2 |
+  |---------|---------|
+  | Value1  | Value2  |
+- For code blocks, use triple backticks
+- Put a blank line between paragraphs
+- Use bold (**text**) for emphasis
+
+DOCUMENT SECTIONS:
+"""
                 
                 for i, doc in enumerate(result):
-                    prompt += f"Section {i + 1}:\n{doc.page_content}\n\n"
+                    prompt += f"\nSection {i + 1}:\n{doc.page_content}\n"
                 print(f"[Summarizer] Using detailed prompt for longer document")
 
             print(f"[Summarizer] Prompt prepared. Sending to LLM...")
@@ -113,15 +133,17 @@ class DocumentSummarizer:
                 if chunk_text:
                     content_chunks.append(chunk_text)
             
-            # Now assemble the full summary
+            # Now assemble the full summary with proper markdown
             complete_summary = "".join(content_chunks)
+            
+            # Ensure proper markdown formatting
+            complete_summary = self._fix_markdown_formatting(complete_summary)
             
             # Log completion AFTER all content has been collected
             print(f"\n[Summarizer] Summarization complete.")
             
-            # Now yield all chunks
-            for chunk in content_chunks:
-                yield chunk
+            # Now yield all fixed chunks
+            yield complete_summary
             
             # Return the complete summary
             return complete_summary
@@ -131,3 +153,36 @@ class DocumentSummarizer:
             print(f"[Summarizer] ERROR: {error_message}")
             yield error_message
             return error_message
+    
+    def _fix_markdown_formatting(self, text):
+        """Fix common markdown formatting issues"""
+        lines = text.split('\n')
+        fixed_lines = []
+        
+        # Ensure proper heading format (space after #)
+        for line in lines:
+            if line.strip().startswith('#'):
+                # Count the number of # characters
+                count = 0
+                for char in line:
+                    if char == '#':
+                        count += 1
+                    else:
+                        break
+                
+                # Check if there's a space after the last #
+                if count > 0 and line[count:].strip() and not line[count:].startswith(' '):
+                    line = line[:count] + ' ' + line[count:].strip()
+            
+            fixed_lines.append(line)
+        
+        fixed_text = '\n'.join(fixed_lines)
+        
+        # Ensure blank lines around headings and between paragraphs
+        fixed_text = fixed_text.replace('\n#', '\n\n#')
+        
+        # Remove any excessive blank lines (more than 2 consecutive)
+        while '\n\n\n' in fixed_text:
+            fixed_text = fixed_text.replace('\n\n\n', '\n\n')
+        
+        return fixed_text

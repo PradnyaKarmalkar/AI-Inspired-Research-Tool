@@ -11,21 +11,21 @@ QA_CHUNK_OVERLAP=200
 # Available models for each feature
 AVAILABLE_SUMMARIZER_MODELS = {
     "gemini-2.0-flash": "Fast and efficient summarization",
-    "gemini-2.5-pro-exp-03-25": "High-quality detailed summarization"
+    "gemini-2.5-flash-preview-04-17": "High-quality detailed summarization"
 }
 
 AVAILABLE_REPORT_MODELS = {
     "gemini-2.0-flash": "Fast report generation",
-    "gemini-2.5-pro-exp-03-25": "Detailed and comprehensive reports"
+    "gemini-2.5-flash-preview-04-17": "Detailed and comprehensive reports"
 }
 
 AVAILABLE_QA_MODELS = {
     "Llama3-8b-8192": "Fast question answering",
-    "gemini-2.5-pro-exp-03-25": "Detailed and accurate answers"
+    "gemini-2.5-pro-exp-03-25" : "Detailed and accurate answers"
 }
 
 # Default models (can be overridden by user selection)
-SUMMARIZER_MODEL = "gemini-2.5-pro-exp-03-25"
+SUMMARIZER_MODEL = "gemini-2.0-flash"
 REPORT_MODEL = "gemini-2.0-flash"
 QA_MODEL = "Llama3-8b-8192"
 EMBED_MODEL = "models/embedding-001"
